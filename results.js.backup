@@ -1,0 +1,43 @@
+const fs = require("fs");
+
+function setPole(driver) {
+  const votes = JSON.parse(
+    fs.readFileSync("./f1-votes.json", "utf8")
+  );
+
+  let leaderboard = {};
+
+  try {
+    leaderboard = JSON.parse(
+      fs.readFileSync("./leaderboard.json", "utf8")
+    );
+  } catch {}
+
+  const winners = [];
+
+  for (const userId in votes) {
+    const vote = votes[userId];
+
+    if (vote.driver === driver) {
+      winners.push(vote.user);
+
+      if (!leaderboard[userId]) {
+        leaderboard[userId] = {
+          user: vote.user,
+          points: 0
+        };
+      }
+
+      leaderboard[userId].points += 10;
+    }
+  }
+
+  fs.writeFileSync(
+    "./leaderboard.json",
+    JSON.stringify(leaderboard, null, 2)
+  );
+
+  return winners;
+}
+
+module.exports = { setPole };

@@ -1,0 +1,167 @@
+require("dotenv").config();
+
+const fs = require("fs");
+const dayjs = require("dayjs");
+const cron = require("node-cron");
+const Parser = require("rss-parser");
+const { Client, GatewayIntentBits } = require("discord.js");
+
+const parser = new Parser();
+
+const client = new Client({
+intents: [GatewayIntentBits.Guilds]
+});
+
+client.once("clientReady", async () => {
+console.log(`✅ Logged in as ${client.user.tag}`);
+console.log("🏁 Race Weekend. Jarvis standing by.");
+console.log("🤖 AI News Module Active.");
+
+let aiChannel;
+
+try {
+aiChannel = await client.channels.fetch(
+process.env.AI_CHANNEL_ID
+);
+
+console.log("✅ AI channel connected");
+
+} catch (err) {
+console.error("AI channel error:", err);
+}
+
+// Daily AI News Check - 10:00 AM IST
+cron.schedule(
+"0 10 * * *",
+async () => {
+try {
+const feed = await parser.parseURL(
+"https://deepmind.google/blog/rss.xml"
+);
+
+    const latest = feed.items[0];
+
+    const newsData = JSON.parse(
+      fs.readFileSync("./ai-news.json", "utf8")
+    );
+
+    if (newsData.lastPosted === latest.link) {
+      console.log("📰 No new AI article.");
+      return;
+    }
+
+    if (!aiChannel) {
+      console.log("❌ AI channel unavailable.");
+      return;
+    }
+
+    await aiChannel.send(
+
+`🤖 **AI Daily Update**
+
+📰 **${latest.title}**
+
+🔗 ${latest.link}
+
+#AI #GoogleDeepMind`
+);
+
+    newsData.lastPosted = latest.link;
+
+    fs.writeFileSync(
+      "./ai-news.json",
+      JSON.stringify(newsData, null, 2)
+    );
+
+    console.log("✅ AI news posted");
+
+  } catch (err) {
+    console.error("AI News Error:", err);
+  }
+},
+{
+  timezone: "Asia/Kolkata"
+}
+
+);
+
+// Race Reminder Scheduler
+setInterval(async () => {
+try {
+const data = JSON.parse(
+fs.readFileSync("./schedule.json", "utf8")
+);
+
+  for (const session of data.sessions) {
+
+    if (session.reminded) continue;
+
+    const start = dayjs(session.start);
+    const now = dayjs();
+
+    const minutesUntilStart =
+      start.diff(now, "minute");
+
+    if (
+      minutesUntilStart <= 15 &&
+      minutesUntilStart >= 0
+    ) {
+
+      const channel = await client.channels.fetch(
+        process.env.CHANNEL_ID
+      );
+
+      if (session.event.includes("Formula 1")) {
+
+        await channel.send(
+
+`🏎️ **Hey F1 Fans!**
+
+🏁 **${session.event}**
+
+⏰ **${session.name} starts in 15 minutes**
+
+🕒 Session Start: ${start.format("HH:mm")} IST
+
+Get ready for lights out and an exciting race! 🔥`
+);
+
+      } else {
+
+        await channel.send(
+
+`🏍️ **Hey MotoGP Fans!**
+
+🏁 **${session.event}**
+
+⏰ **${session.name} starts in 15 minutes**
+
+🕒 Session Start: ${start.format("HH:mm")} IST
+
+Grab your snacks and enjoy the action! 🔥`
+);
+
+      }
+
+      session.reminded = true;
+
+      fs.writeFileSync(
+        "./schedule.json",
+        JSON.stringify(data, null, 2)
+      );
+
+      console.log(
+        `✅ Reminder sent for ${session.name}`
+      );
+    }
+  }
+
+} catch (err) {
+  console.error(err);
+}
+
+}, 60000);
+});
+
+client.login(process.env.DISCORD_TOKEN);
+
