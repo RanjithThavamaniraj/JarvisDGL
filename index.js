@@ -22,7 +22,7 @@ client.once("clientReady", async () => {
   console.log("🏁 Race Weekend. Jarvis standing by.");
   console.log("🤖 AI News Module Active.");
 
-  require("./race-poll")(client);
+  require("./race-poll").setupListener(client);
 
   let aiChannel;
 
@@ -176,9 +176,20 @@ client.on("messageCreate", async (message) => {
   console.log("COMMAND:", message.content);
   console.log("AUTHOR:", message.author.id);
 
-  if (message.content.startsWith("!setpole") || message.content.startsWith("!winners") || message.content === "!leaderboard") {
+  if (message.content.startsWith("!setpole") || message.content.startsWith("!winners") || message.content === "!leaderboard" || message.content === "!createpoll") {
     if (message.author.id !== "1427524651013242951") {
       return;
+    }
+
+    if (message.content === "!createpoll") {
+      try {
+        const { createPoll } = require("./race-poll");
+        await createPoll(client);
+        return message.reply("✅ Race poll created successfully!");
+      } catch (err) {
+        console.error("CREATE POLL ERROR:", err);
+        return message.reply("Error creating poll.");
+      }
     }
 
     if (message.content.startsWith("!setpole")) {
