@@ -114,7 +114,9 @@ Vote below 👇`,
         JSON.stringify(votes, null, 2)
       );
 
-
+      // Additive Supabase Migration: Dual-write in background
+      const { syncPrediction } = require("./supabase");
+      syncPrediction(interaction.user.id, interaction.user.username, driver, "RACE_WIN");
 
       await interaction.reply({
         content:

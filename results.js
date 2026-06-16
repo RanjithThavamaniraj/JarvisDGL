@@ -63,7 +63,9 @@ function setResult(driver, voteFile, eventPrefix) {
   history.push(eventId);
   fs.writeFileSync("./results-history.json", JSON.stringify(history, null, 2));
 
-
+  // Additive Supabase Migration: Dual-write in background
+  const { syncLeaderboard } = require("./supabase");
+  syncLeaderboard(leaderboard);
 
   return { winners };
 }
