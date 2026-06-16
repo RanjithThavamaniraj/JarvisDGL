@@ -114,6 +114,8 @@ Vote below 👇`,
         JSON.stringify(votes, null, 2)
       );
 
+
+
       await interaction.reply({
         content:
           `✅ Vote recorded: **${driver}**`,

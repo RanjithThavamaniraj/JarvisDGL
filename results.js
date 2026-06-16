@@ -3,7 +3,7 @@ const dayjs = require("dayjs");
 const isoWeek = require("dayjs/plugin/isoWeek");
 dayjs.extend(isoWeek);
 
-function setPole(driver) {
+function setResult(driver, voteFile, eventPrefix) {
   let history = [];
   try {
     const rawData = fs.readFileSync("./results-history.json", "utf8");
@@ -17,18 +17,22 @@ function setPole(driver) {
     history = [];
   }
 
-  const eventId = "RaceWeek_" + dayjs().year() + "_" + dayjs().isoWeek();
+  const eventId = eventPrefix + "_" + dayjs().year() + "_" + dayjs().isoWeek();
 
   if (history.includes(eventId)) {
-    return { error: "Results already processed." };
+    return { error: `Results already processed for ${eventPrefix}.` };
   }
 
   let votesData = "{}";
   try {
-    votesData = fs.readFileSync("./f1-votes.json", "utf8");
+    votesData = fs.readFileSync(voteFile, "utf8");
   } catch {}
 
   const votes = JSON.parse(votesData);
+
+  if (Object.keys(votes).length === 0) {
+    return { error: `No ${eventPrefix.toLowerCase()} predictions found. Results not processed.` };
+  }
 
   let leaderboard = {};
   try {
@@ -59,7 +63,9 @@ function setPole(driver) {
   history.push(eventId);
   fs.writeFileSync("./results-history.json", JSON.stringify(history, null, 2));
 
+
+
   return { winners };
 }
 
-module.exports = { setPole };
+module.exports = { setResult };

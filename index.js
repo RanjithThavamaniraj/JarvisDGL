@@ -118,6 +118,9 @@ fs.readFileSync("./schedule.json", "utf8")
         process.env.CHANNEL_ID
       );
 
+      const showSupport = Math.random() < 0.3;
+      const supportFooter = showSupport ? "\n\n☕ *Support Pit Wall: Type `!support` or `!gear` to help keep Jarvis running!*" : "";
+
       if (session.event.includes("Formula 1")) {
 
         await channel.send(
@@ -130,7 +133,7 @@ fs.readFileSync("./schedule.json", "utf8")
 
 🕒 Session Start: ${start.format("HH:mm")} IST
 
-Get ready for lights out and an exciting race! 🔥`
+Get ready for lights out and an exciting race! 🔥${supportFooter}`
 );
 
       } else {
@@ -145,7 +148,7 @@ Get ready for lights out and an exciting race! 🔥`
 
 🕒 Session Start: ${start.format("HH:mm")} IST
 
-Grab your snacks and enjoy the action! 🔥`
+Grab your snacks and enjoy the action! 🔥${supportFooter}`
 );
 
       }
@@ -176,12 +179,46 @@ client.on("messageCreate", async (message) => {
   console.log("COMMAND:", message.content);
   console.log("AUTHOR:", message.author.id);
 
-  if (message.content.startsWith("!setpole") || message.content.startsWith("!winners") || message.content === "!leaderboard" || message.content === "!createpoll") {
+  const command = message.content.trim().split(/\s+/)[0];
+
+  if (command === "!support") {
+    return message.reply(
+`☕ **Support Pit Wall & Jarvis**
+
+Running Jarvis and the Pit Wall platform requires servers and API costs. If you enjoy our race reminders, leaderboards, and AI news, consider supporting us!
+
+💖 **Ko-fi:** https://ko-fi.com/pitwall *(Update with your link)*
+💳 **Stripe:** *(Add Stripe link here)*
+
+*Every contribution helps keep the platform ad-free and running smoothly. Thank you!* 🏁`
+    );
+  }
+
+  if (command === "!gear") {
+    return message.reply(
+`🏎️ **Pit Wall Recommended Gear** 🏎️
+
+Looking to upgrade your setup or get some merch? Check out our affiliate links. It costs you nothing extra, but helps support Pit Wall!
+
+🎮 **Sim Racing:**
+• Fanatec CSL DD: *(Add Link)*
+• Logitech G PRO: *(Add Link)*
+
+👕 **Merch & Subscriptions:**
+• F1 TV Pro: *(Add Link)*
+• Official F1 Store: *(Add Link)*
+
+*Thanks for supporting the community!*`
+    );
+  }
+
+  const adminCommands = ["!setpole", "!setwinner", "!winners", "!leaderboard", "!createpoll"];
+  if (adminCommands.includes(command)) {
     if (message.author.id !== "1427524651013242951") {
       return;
     }
 
-    if (message.content === "!createpoll") {
+    if (command === "!createpoll") {
       try {
         const { createPoll } = require("./race-poll");
         await createPoll(client);
@@ -192,15 +229,15 @@ client.on("messageCreate", async (message) => {
       }
     }
 
-    if (message.content.startsWith("!setpole")) {
+    if (command === "!setpole") {
       const args = message.content.trim().split(/\s+/);
       const driver = args.slice(1).join(" ");
       if (!driver) {
         return message.reply("Please provide a driver name.");
       }
 
-      const { setPole } = require("./results");
-      const res = setPole(driver);
+      const { setResult } = require("./results");
+      const res = setResult(driver, "./f1-votes.json", "Pole");
       
       if (res.error) {
         return message.reply(res.error);
@@ -209,7 +246,24 @@ client.on("messageCreate", async (message) => {
       return message.reply(`✅ Pole set to **${driver}**!\nWinners: ${res.winners.length > 0 ? res.winners.join(", ") : "None"}`);
     }
 
-    if (message.content.startsWith("!winners")) {
+    if (command === "!setwinner") {
+      const args = message.content.trim().split(/\s+/);
+      const driver = args.slice(1).join(" ");
+      if (!driver) {
+        return message.reply("Please provide a driver name.");
+      }
+
+      const { setResult } = require("./results");
+      const res = setResult(driver, "./race-votes.json", "Race");
+      
+      if (res.error) {
+        return message.reply(res.error);
+      }
+      
+      return message.reply(`✅ Race Winner set to **${driver}**!\nWinners: ${res.winners.length > 0 ? res.winners.join(", ") : "None"}`);
+    }
+
+    if (command === "!winners") {
       try {
         const args = message.content.trim().split(/\s+/);
         const driver = args.slice(1).join(" ");
@@ -243,6 +297,11 @@ client.on("messageCreate", async (message) => {
 
         reply += `\n👏 Congratulations to everyone who predicted the winner correctly!`;
 
+        const showSupport = Math.random() < 0.3;
+        if (showSupport) {
+          reply += `\n\n☕ *Support Pit Wall: Type \`!support\` or \`!gear\` to help keep Jarvis running!*`;
+        }
+
         return message.reply(reply);
       } catch (err) {
         console.error("WINNERS ERROR:", err);
@@ -250,7 +309,7 @@ client.on("messageCreate", async (message) => {
       }
     }
 
-    if (message.content === "!leaderboard") {
+    if (command === "!leaderboard") {
       try {
         let leaderboard = {};
         if (fs.existsSync("./leaderboard.json")) {
@@ -268,9 +327,14 @@ client.on("messageCreate", async (message) => {
         
         let reply = "🏆 Leaderboard 🏆\n\n";
         sorted.forEach((entry, index) => {
-          reply += `${index + 1}. ${entry.user} - ${entry.points} pts\n\n`;
+          reply += `${index + 1}. ${entry.user} - ${entry.points} pts\n`;
         });
         
+        const showSupport = Math.random() < 0.3;
+        if (showSupport) {
+          reply += `\n☕ *Support Pit Wall: Type \`!support\` or \`!gear\` to help keep Jarvis running!*`;
+        }
+
         return message.reply(reply.trim());
       } catch (err) {
         console.error(err);
