@@ -212,10 +212,27 @@ Looking to upgrade your setup or get some merch? Check out our affiliate links. 
     );
   }
 
-  const adminCommands = ["!setpole", "!setwinner", "!winners", "!leaderboard", "!createpoll"];
+  const adminCommands = ["!setpole", "!setwinner", "!winners", "!leaderboard", "!createpoll", "!announce"];
   if (adminCommands.includes(command)) {
     if (message.author.id !== "1427524651013242951") {
       return;
+    }
+
+    if (command === "!announce") {
+      const args = message.content.trim().split(/\s+/);
+      const announcement = args.slice(1).join(" ");
+      if (!announcement) {
+        return message.reply("Please provide a message to announce.");
+      }
+
+      try {
+        const channel = await client.channels.fetch(process.env.CHANNEL_ID);
+        await channel.send(announcement);
+        return message.reply("Announcement sent.");
+      } catch (err) {
+        console.error("ANNOUNCE ERROR:", err);
+        return message.reply("Error sending announcement.");
+      }
     }
 
     if (command === "!createpoll") {
