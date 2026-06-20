@@ -1,25 +1,31 @@
 {
-  "timestamp": 1781941391116,
-  "eventUuid": "mock-event-123",
-  "categoryUuid": "mock-category-456",
+  "timestamp": 1781960401024,
+  "eventUuid": "f9d2e80c-431b-485f-afcf-671950648ad7",
+  "categoryUuid": "e8c110ad-64aa-4e8e-8a86-f2f152f6a942",
   "sessions": [
     {
-      "id": "mock-sprint-id",
-      "type": "SPR",
-      "name": "MotoGP Sprint",
-      "event": "MOCK GRAND PRIX",
-      "start": "2026-06-20T06:43:11.116Z",
-      "reminded": true,
-      "resultsPosted": true
+      "id": "cc65ea7a-dc8f-4d58-a703-0b5fd6d9736e",
+      "type": "Q",
+      "name": "MotoGP Qualifying",
+      "event": "GRAND PRIX OF CZECHIA",
+      "start": "2026-06-20T10:50:00+00:00",
+      "reminded": false
     },
     {
-      "id": "mock-race-id",
+      "id": "bad8aad9-03cc-4789-bac1-c1f092215980",
+      "type": "SPR",
+      "name": "MotoGP Sprint",
+      "event": "GRAND PRIX OF CZECHIA",
+      "start": "2026-06-20T15:00:00+00:00",
+      "reminded": false
+    },
+    {
+      "id": "32a50043-07c4-48cb-94f5-cf02afa57ca9",
       "type": "RAC",
       "name": "MotoGP Race",
-      "event": "MOCK GRAND PRIX",
-      "start": "2026-06-20T05:43:11.121Z",
-      "reminded": true,
-      "resultsPosted": true
+      "event": "GRAND PRIX OF CZECHIA",
+      "start": "2026-06-21T14:00:00+00:00",
+      "reminded": false
     }
   ]
 }

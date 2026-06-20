@@ -120,7 +120,11 @@ async function fetchMotoGPSchedule() {
     });
   }
 
-  return parsedSessions;
+  return {
+    sessions: parsedSessions,
+    eventUuid: activeEvent.id,
+    categoryUuid: motoGPCat.id
+  };
 }
 
 function mergeRemindedStates(newSessions, previousSessions) {
@@ -155,7 +159,8 @@ async function getSchedule() {
   if (!useCached) {
     try {
       console.log("🌐 Fetching current MotoGP schedule from API...");
-      let newSessions = await fetchMotoGPSchedule();
+      const { sessions: fetchedSessions, eventUuid, categoryUuid } = await fetchMotoGPSchedule();
+      let newSessions = fetchedSessions;
       
       if (cache && cache.sessions) {
         newSessions = mergeRemindedStates(newSessions, cache.sessions);
@@ -165,8 +170,8 @@ async function getSchedule() {
       saveCache({
         timestamp: Date.now(),
         lastAnnouncedEvent: cache ? cache.lastAnnouncedEvent : undefined,
-        eventUuid: activeEvent.id,
-        categoryUuid: motoGPCat.id,
+        eventUuid,
+        categoryUuid,
         sessions: newSessions
       });
       motoGPSessions = newSessions;
