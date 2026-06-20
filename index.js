@@ -219,9 +219,9 @@ Looking to upgrade your setup or get some merch? Check out our affiliate links. 
     }
 
     if (command === "!announce") {
-      const args = message.content.trim().split(/\s+/);
-      const announcement = args.slice(1).join(" ");
-      if (!announcement) {
+      const match = message.content.match(/!announce(?:\r\n|\s)/);
+      const announcement = match ? message.content.slice(match.index + match[0].length) : "";
+      if (!announcement.trim()) {
         return message.reply("Please provide a message to announce.");
       }
 
