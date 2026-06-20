@@ -92,14 +92,93 @@ const feed = await parser.parseURL(
 
 );
 
-// Race Reminder Scheduler
-setInterval(async () => {
-try {
-const data = JSON.parse(
-fs.readFileSync("./schedule.json", "utf8")
+// Weekly MotoGP Weekend Schedule Announcement - Friday at 9:00 AM IST
+cron.schedule(
+  "0 9 * * 5",
+  async () => {
+    try {
+      const { getSchedule, hasAnnounced, markAnnounced } = require("./motogp-provider");
+      const sessions = await getSchedule();
+      const motogpSessions = sessions.filter(s => !s.event.includes("Formula 1"));
+
+      if (motogpSessions.length === 0) {
+        console.log("📅 No MotoGP schedule available for weekly announcement.");
+        return;
+      }
+
+      const firstSession = motogpSessions[0];
+      const eventName = firstSession.event;
+
+      if (hasAnnounced(eventName)) {
+        console.log(`📅 MotoGP weekend schedule already announced for event: ${eventName}`);
+        return;
+      }
+
+      const qualy = motogpSessions.find(s => s.name === "MotoGP Qualifying");
+      const sprint = motogpSessions.find(s => s.name === "MotoGP Sprint");
+      const race = motogpSessions.find(s => s.name === "MotoGP Race");
+
+      if (!qualy || !race) {
+        console.log("❌ Incomplete MotoGP sessions data for weekly announcement.");
+        return;
+      }
+
+      const qualyStart = dayjs(qualy.start);
+      const qualyTimeStr = qualyStart.format("HH:mm");
+      
+      const raceStart = dayjs(race.start);
+      const raceTimeStr = raceStart.format("HH:mm");
+
+      let msg = `🏍️ **MotoGP Weekend Schedule**\n\n`;
+      msg += `📅 ${qualyStart.format("D MMMM YYYY")}\n`;
+      msg += `🏁 Qualifying — ${qualyTimeStr} IST\n`;
+      
+      if (sprint) {
+        const sprintStart = dayjs(sprint.start);
+        const sprintTimeStr = sprintStart.format("HH:mm");
+        if (qualyStart.isSame(sprintStart, 'day')) {
+          msg += `⚡ Sprint Race — ${sprintTimeStr} IST\n`;
+        }
+      }
+      msg += `\n`;
+
+      if (sprint) {
+        const sprintStart = dayjs(sprint.start);
+        const sprintTimeStr = sprintStart.format("HH:mm");
+        if (!qualyStart.isSame(sprintStart, 'day')) {
+          msg += `📅 ${sprintStart.format("D MMMM YYYY")}\n`;
+          msg += `⚡ Sprint Race — ${sprintTimeStr} IST\n\n`;
+        }
+      }
+
+      msg += `📅 ${raceStart.format("D MMMM YYYY")}\n`;
+      msg += `🏆 Grand Prix Race — ${raceTimeStr} IST\n\n`;
+      msg += `Who are you backing this weekend? 🔥`;
+
+      const channel = await client.channels.fetch(process.env.CHANNEL_ID);
+      await channel.send(msg);
+
+      markAnnounced(eventName);
+      console.log(`✅ Weekly MotoGP schedule announcement sent for event: ${eventName}`);
+
+    } catch (err) {
+      console.error("Weekly MotoGP schedule announcement error:", err);
+    }
+  },
+  {
+    timezone: "Asia/Kolkata"
+  }
 );
 
-  for (const session of data.sessions) {
+// Race Reminder Scheduler
+const { getSchedule, markReminded, checkAndPostResults } = require("./motogp-provider");
+
+setInterval(async () => {
+try {
+  const sessions = await getSchedule();
+  await checkAndPostResults(client);
+
+  for (const session of sessions) {
 
     if (session.reminded) continue;
 
@@ -153,12 +232,7 @@ Grab your snacks and enjoy the action! 🔥${supportFooter}`
 
       }
 
-      session.reminded = true;
-
-      fs.writeFileSync(
-        "./schedule.json",
-        JSON.stringify(data, null, 2)
-      );
+      markReminded(session);
 
       console.log(
         `✅ Reminder sent for ${session.name}`

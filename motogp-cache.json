@@ -1,0 +1,25 @@
+{
+  "timestamp": 1781941391116,
+  "eventUuid": "mock-event-123",
+  "categoryUuid": "mock-category-456",
+  "sessions": [
+    {
+      "id": "mock-sprint-id",
+      "type": "SPR",
+      "name": "MotoGP Sprint",
+      "event": "MOCK GRAND PRIX",
+      "start": "2026-06-20T06:43:11.116Z",
+      "reminded": true,
+      "resultsPosted": true
+    },
+    {
+      "id": "mock-race-id",
+      "type": "RAC",
+      "name": "MotoGP Race",
+      "event": "MOCK GRAND PRIX",
+      "start": "2026-06-20T05:43:11.121Z",
+      "reminded": true,
+      "resultsPosted": true
+    }
+  ]
+}
