@@ -1,8 +1,37 @@
 const fs = require("fs");
 const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const SCHEDULE_PATH = "./schedule.json";
 const CACHE_PATH = "./motogp-cache.json";
+
+const COUNTRY_TIMEZONES = {
+  "QA": "Asia/Qatar",
+  "PT": "Europe/Lisbon",
+  "ES": "Europe/Madrid",
+  "FR": "Europe/Paris",
+  "IT": "Europe/Rome",
+  "DE": "Europe/Berlin",
+  "NL": "Europe/Amsterdam",
+  "KZ": "Asia/Almaty",
+  "GB": "Europe/London",
+  "AT": "Europe/Vienna",
+  "SM": "Europe/Rome",
+  "IN": "Asia/Kolkata",
+  "ID": "Asia/Makassar",
+  "JP": "Asia/Tokyo",
+  "AU": "Australia/Melbourne",
+  "TH": "Asia/Bangkok",
+  "MY": "Asia/Kuala_Lumpur",
+  "US": "America/Chicago",
+  "AR": "America/Argentina/Buenos_Aires",
+  "CZ": "Europe/Prague",
+  "HU": "Europe/Budapest"
+};
 
 function loadManualSchedule() {
   try {
@@ -76,6 +105,14 @@ async function fetchMotoGPSchedule() {
     throw new Error("Invalid sessions response from MotoGP API");
   }
 
+  const countryIso = activeEvent.country?.iso;
+  const tzName = COUNTRY_TIMEZONES[countryIso] || "UTC";
+  const convertSessionTime = (rawDate) => {
+    if (!rawDate) return rawDate;
+    const localTimePart = rawDate.slice(0, 19);
+    return dayjs.tz(localTimePart, tzName).toISOString();
+  };
+
   const parsedSessions = [];
   const eventName = activeEvent.name;
 
@@ -89,7 +126,7 @@ async function fetchMotoGPSchedule() {
       type: "Q",
       name: "MotoGP Qualifying",
       event: eventName,
-      start: qSessions[0].date,
+      start: convertSessionTime(qSessions[0].date),
       reminded: false
     });
   }
@@ -102,7 +139,7 @@ async function fetchMotoGPSchedule() {
       type: "SPR",
       name: "MotoGP Sprint",
       event: eventName,
-      start: sprintSession.date,
+      start: convertSessionTime(sprintSession.date),
       reminded: false
     });
   }
@@ -115,7 +152,7 @@ async function fetchMotoGPSchedule() {
       type: "RAC",
       name: "MotoGP Race",
       event: eventName,
-      start: raceSession.date,
+      start: convertSessionTime(raceSession.date),
       reminded: false
     });
   }
