@@ -24,6 +24,11 @@ client.once("clientReady", async () => {
 
   require("./race-poll").setupListener(client);
 
+  const { logStartupStatus } = require("./community-predictions/config");
+  logStartupStatus();
+  require("./community-predictions").setup(client);
+  require("./api/server").start();
+
   let aiChannel;
 
 try {

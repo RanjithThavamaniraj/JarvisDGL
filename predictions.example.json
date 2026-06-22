@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "events": {
+    "f1_2026_formula_1": {
+      "eventId": "f1_2026_formula_1",
+      "sport": "f1",
+      "eventName": "Austrian Grand Prix",
+      "type": "race_winner",
+      "status": "closed",
+      "raceStart": "2026-06-28T18:30:00+05:30",
+      "closesAt": "2026-06-28T18:00:00+05:30",
+      "channelId": "1478334113097453598",
+      "messageId": "0000000000000000000",
+      "candidates": [
+        { "id": "norris", "label": "Norris", "displayName": "Lando Norris" }
+      ],
+      "votes": {},
+      "final": {
+        "closedAt": "2026-06-28T18:00:00.000Z",
+        "totalVotes": 0,
+        "leader": null,
+        "candidates": []
+      },
+      "communityResultsPosted": false,
+      "openedAt": "2026-06-27T12:30:00.000Z"
+    }
+  }
+}

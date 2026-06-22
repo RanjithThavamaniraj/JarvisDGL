@@ -1,0 +1,24 @@
+{
+  "drivers": [
+    { "id": "piastri", "label": "Piastri", "displayName": "Oscar Piastri" },
+    { "id": "norris", "label": "Norris", "displayName": "Lando Norris" },
+    { "id": "leclerc", "label": "Leclerc", "displayName": "Charles Leclerc" },
+    { "id": "hamilton", "label": "Hamilton", "displayName": "Lewis Hamilton" },
+    { "id": "verstappen", "label": "Verstappen", "displayName": "Max Verstappen" },
+    { "id": "hadjar", "label": "Hadjar", "displayName": "Isack Hadjar" },
+    { "id": "russell", "label": "Russell", "displayName": "George Russell" },
+    { "id": "antonelli", "label": "Antonelli", "displayName": "Kimi Antonelli" },
+    { "id": "alonso", "label": "Alonso", "displayName": "Fernando Alonso" },
+    { "id": "stroll", "label": "Stroll", "displayName": "Lance Stroll" },
+    { "id": "sainz", "label": "Sainz", "displayName": "Carlos Sainz" },
+    { "id": "albon", "label": "Albon", "displayName": "Alexander Albon" },
+    { "id": "lawson", "label": "Lawson", "displayName": "Liam Lawson" },
+    { "id": "bearman", "label": "Bearman", "displayName": "Oliver Bearman" },
+    { "id": "ocon", "label": "Ocon", "displayName": "Esteban Ocon" },
+    { "id": "gasly", "label": "Gasly", "displayName": "Pierre Gasly" },
+    { "id": "hulkenberg", "label": "Hulkenberg", "displayName": "Nico Hulkenberg" },
+    { "id": "bortoleto", "label": "Bortoleto", "displayName": "Gabriel Bortoleto" },
+    { "id": "bottas", "label": "Bottas", "displayName": "Valtteri Bottas" },
+    { "id": "perez", "label": "Perez", "displayName": "Sergio Perez" }
+  ]
+}
