@@ -28,7 +28,8 @@ client.once("clientReady", async () => {
   console.log("🏁 Race Weekend. Jarvis standing by.");
   console.log("🤖 AI News Module Active.");
 
-  require("./race-poll").setupListener(client);
+  const { setupInteractionRouter } = require("./interactions/router");
+  setupInteractionRouter(client);
 
   const { logStartupStatus } = require("./community-predictions/config");
   logStartupStatus();
