@@ -336,7 +336,7 @@ async function checkAndPostResults(client) {
           }
 
           if (msg) {
-            const channel = await client.channels.fetch(process.env.CHANNEL_ID);
+            const channel = await client.channels.fetch(process.env.MOTOGP_CHANNEL_ID);
             await channel.send(msg);
             console.log(`✅ Posted results for ${targetSession.name}`);
 

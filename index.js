@@ -155,7 +155,7 @@ cron.schedule(
       msg += `🏆 Grand Prix Race — ${formatMotoGpSessionLine(race.start)}\n\n`;
       msg += `Who are you backing this weekend? 🔥`;
 
-      const channel = await client.channels.fetch(process.env.CHANNEL_ID);
+      const channel = await client.channels.fetch(process.env.MOTOGP_CHANNEL_ID);
       await channel.send(msg);
 
       markAnnounced(eventName);
@@ -192,9 +192,8 @@ try {
       minutesUntilStart >= 0
     ) {
 
-      const channel = await client.channels.fetch(
-        process.env.CHANNEL_ID
-      );
+      const channelId = isF1 ? process.env.CHANNEL_ID : process.env.MOTOGP_CHANNEL_ID;
+      const channel = await client.channels.fetch(channelId);
 
       const showSupport = Math.random() < 0.3;
       const supportFooter = showSupport ? "\n\n☕ *Support Pit Wall: Type `!support` or `!gear` to help keep Jarvis running!*" : "";
