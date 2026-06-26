@@ -1,0 +1,26 @@
+{
+  "riders": [
+    { "id": "pedroacosta", "label": "Acosta", "displayName": "Pedro Acosta" },
+    { "id": "ferminaldeguer", "label": "Aldeguer", "displayName": "Fermin Aldeguer" },
+    { "id": "francescobagnaia", "label": "Bagnaia", "displayName": "Francesco Bagnaia" },
+    { "id": "eneabastianini", "label": "Bastianini", "displayName": "Enea Bastianini" },
+    { "id": "marcobezzecchi", "label": "Bezzecchi", "displayName": "Marco Bezzecchi" },
+    { "id": "bradbinder", "label": "Binder", "displayName": "Brad Binder" },
+    { "id": "fabiodigiannantonio", "label": "Di Giannantonio", "displayName": "Fabio Di Giannantonio" },
+    { "id": "raulfernandez", "label": "Fernandez", "displayName": "Raul Fernandez" },
+    { "id": "lucamarini", "label": "Marini", "displayName": "Luca Marini" },
+    { "id": "alexmarquez", "label": "Marquez", "displayName": "Alex Marquez" },
+    { "id": "marcmarquez", "label": "Marquez", "displayName": "Marc Marquez" },
+    { "id": "jorgemartin", "label": "Martin", "displayName": "Jorge Martin" },
+    { "id": "jackmiller", "label": "Miller", "displayName": "Jack Miller" },
+    { "id": "joanmir", "label": "Mir", "displayName": "Joan Mir" },
+    { "id": "francomorbidelli", "label": "Morbidelli", "displayName": "Franco Morbidelli" },
+    { "id": "diogomoreira", "label": "Moreira", "displayName": "Diogo Moreira" },
+    { "id": "aiogura", "label": "Ogura", "displayName": "Ai Ogura" },
+    { "id": "fabioquartararo", "label": "Quartararo", "displayName": "Fabio Quartararo" },
+    { "id": "toprakrazgatlioglu", "label": "Razgatlioglu", "displayName": "Toprak Razgatlioglu" },
+    { "id": "alexrins", "label": "Rins", "displayName": "Alex Rins" },
+    { "id": "maverickviales", "label": "Viñales", "displayName": "Maverick Viñales" },
+    { "id": "johannzarco", "label": "Zarco", "displayName": "Johann Zarco" }
+  ]
+}
