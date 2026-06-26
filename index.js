@@ -3,6 +3,12 @@ require("dotenv").config();
 const fs = require("fs");
 const dayjs = require("dayjs");
 const cron = require("node-cron");
+const {
+  formatMotoGpDate,
+  formatMotoGpSessionLine,
+  getMotoGpMinutesUntilStart,
+  isMotoGpSameCalendarDay
+} = require("./utils/motogp-time");
 const Parser = require("rss-parser");
 const { Client, GatewayIntentBits } = require("discord.js");
 
@@ -128,36 +134,24 @@ cron.schedule(
         return;
       }
 
-      const qualyStart = dayjs(qualy.start);
-      const qualyTimeStr = qualyStart.format("HH:mm");
-      
-      const raceStart = dayjs(race.start);
-      const raceTimeStr = raceStart.format("HH:mm");
-
       let msg = `🏍️ **MotoGP Weekend Schedule**\n\n`;
-      msg += `📅 ${qualyStart.format("D MMMM YYYY")}\n`;
-      msg += `🏁 Qualifying — ${qualyTimeStr} IST\n`;
-      
+      msg += `📅 ${formatMotoGpDate(qualy.start)}\n`;
+      msg += `🏁 Qualifying — ${formatMotoGpSessionLine(qualy.start)}\n`;
+
       if (sprint) {
-        const sprintStart = dayjs(sprint.start);
-        const sprintTimeStr = sprintStart.format("HH:mm");
-        if (qualyStart.isSame(sprintStart, 'day')) {
-          msg += `⚡ Sprint Race — ${sprintTimeStr} IST\n`;
+        if (isMotoGpSameCalendarDay(qualy.start, sprint.start)) {
+          msg += `⚡ Sprint Race — ${formatMotoGpSessionLine(sprint.start)}\n`;
         }
       }
       msg += `\n`;
 
-      if (sprint) {
-        const sprintStart = dayjs(sprint.start);
-        const sprintTimeStr = sprintStart.format("HH:mm");
-        if (!qualyStart.isSame(sprintStart, 'day')) {
-          msg += `📅 ${sprintStart.format("D MMMM YYYY")}\n`;
-          msg += `⚡ Sprint Race — ${sprintTimeStr} IST\n\n`;
-        }
+      if (sprint && !isMotoGpSameCalendarDay(qualy.start, sprint.start)) {
+        msg += `📅 ${formatMotoGpDate(sprint.start)}\n`;
+        msg += `⚡ Sprint Race — ${formatMotoGpSessionLine(sprint.start)}\n\n`;
       }
 
-      msg += `📅 ${raceStart.format("D MMMM YYYY")}\n`;
-      msg += `🏆 Grand Prix Race — ${raceTimeStr} IST\n\n`;
+      msg += `📅 ${formatMotoGpDate(race.start)}\n`;
+      msg += `🏆 Grand Prix Race — ${formatMotoGpSessionLine(race.start)}\n\n`;
       msg += `Who are you backing this weekend? 🔥`;
 
       const channel = await client.channels.fetch(process.env.CHANNEL_ID);
@@ -187,11 +181,10 @@ try {
 
     if (session.reminded) continue;
 
-    const start = dayjs(session.start);
-    const now = dayjs();
-
-    const minutesUntilStart =
-      start.diff(now, "minute");
+    const isF1 = session.event.includes("Formula 1");
+    const minutesUntilStart = isF1
+      ? dayjs(session.start).diff(dayjs(), "minute")
+      : getMotoGpMinutesUntilStart(session.start);
 
     if (
       minutesUntilStart <= 15 &&
@@ -205,7 +198,8 @@ try {
       const showSupport = Math.random() < 0.3;
       const supportFooter = showSupport ? "\n\n☕ *Support Pit Wall: Type `!support` or `!gear` to help keep Jarvis running!*" : "";
 
-      if (session.event.includes("Formula 1")) {
+      if (isF1) {
+        const start = dayjs(session.start);
 
         await channel.send(
 
@@ -230,7 +224,7 @@ Get ready for lights out and an exciting race! 🔥${supportFooter}`
 
 ⏰ **${session.name} starts in 15 minutes**
 
-🕒 Session Start: ${start.format("HH:mm")} IST
+🕒 Session Start: ${formatMotoGpSessionLine(session.start)}
 
 Grab your snacks and enjoy the action! 🔥${supportFooter}`
 );

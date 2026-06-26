@@ -3,11 +3,18 @@ const path = require("path");
 const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
+const {
+  DISPLAY_TIMEZONE,
+  getMotoGpYear,
+  subtractMinutes,
+  isMotoGpRaceThisWeekend,
+  normalizeStoredStart
+} = require("../utils/motogp-time");
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const IST = "Asia/Kolkata";
+const IST = DISPLAY_TIMEZONE;
 const SCHEDULE_PATH = path.join(__dirname, "..", "schedule.json");
 const CACHE_PATH = path.join(__dirname, "..", "motogp-cache.json");
 
@@ -19,7 +26,8 @@ function slugify(text) {
 }
 
 function buildEventId(sport, eventName, raceStart) {
-  const year = dayjs(raceStart).year();
+  const year =
+    sport === "motogp" ? getMotoGpYear(raceStart) : dayjs(raceStart).year();
   return `${sport}_${year}_${slugify(eventName)}`;
 }
 
@@ -71,13 +79,14 @@ function getMotoGPRaceSession() {
   if (!race) return null;
 
   const eventName = formatMotoGpEventName(race.event);
+  const raceStart = normalizeStoredStart(race.start, cache.countryIso);
 
   return {
     sport: "motogp",
     eventName,
     sessionName: race.name,
-    raceStart: race.start,
-    eventId: buildEventId("motogp", race.event, race.start),
+    raceStart,
+    eventId: buildEventId("motogp", race.event, raceStart),
     sessionId: race.id,
     eventUuid: cache.eventUuid,
     categoryUuid: cache.categoryUuid
@@ -98,11 +107,17 @@ function getRaceSessionForSport(sport) {
   return null;
 }
 
-function getClosesAt(raceStart) {
+function getClosesAt(raceStart, sport) {
+  if (sport === "motogp") {
+    return subtractMinutes(raceStart, 30);
+  }
   return dayjs(raceStart).subtract(30, "minute").toISOString();
 }
 
-function isRaceThisWeekend(raceStart) {
+function isRaceThisWeekend(raceStart, sport) {
+  if (sport === "motogp") {
+    return isMotoGpRaceThisWeekend(raceStart);
+  }
   const race = dayjs(raceStart).tz(IST);
   const now = dayjs().tz(IST);
   const fridayStart = now.day(5).startOf("day");

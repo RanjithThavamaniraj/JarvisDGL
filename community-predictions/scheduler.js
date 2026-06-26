@@ -9,6 +9,7 @@ const {
   isMotoGpRaceResultsPosted,
   IST
 } = require("./schedule");
+const { isMotoGpClosureReached } = require("../utils/motogp-time");
 const { fetchMotoGpRaceWinner } = require("./candidates");
 const {
   shouldPollF1Results,
@@ -27,7 +28,7 @@ async function tryOpenWeekendPolls(client) {
       const raceSession = getRaceSessionForSport(sport);
       if (!raceSession) continue;
 
-      if (!isRaceThisWeekend(raceSession.raceStart)) {
+      if (!isRaceThisWeekend(raceSession.raceStart, sport)) {
         continue;
       }
 
@@ -48,7 +49,13 @@ async function checkClosures(client) {
 
   for (const event of Object.values(data.events)) {
     if (event.status !== "open") continue;
-    if (now.isBefore(dayjs(event.closesAt))) continue;
+
+    const closureReached =
+      event.sport === "motogp"
+        ? isMotoGpClosureReached(event.closesAt)
+        : now.isAfter(dayjs(event.closesAt));
+
+    if (!closureReached) continue;
 
     try {
       await closePoll(client, event.eventId);

@@ -1,37 +1,14 @@
 const fs = require("fs");
-const dayjs = require("dayjs");
-const utc = require("dayjs/plugin/utc");
-const timezone = require("dayjs/plugin/timezone");
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
+const {
+  CACHE_SCHEMA_VERSION,
+  parseMotoGpApiDate,
+  normalizeStoredStart,
+  isMotoGpSessionPast,
+  getMotoGpTodayDateString
+} = require("./utils/motogp-time");
 
 const SCHEDULE_PATH = "./schedule.json";
 const CACHE_PATH = "./motogp-cache.json";
-
-const COUNTRY_TIMEZONES = {
-  "QA": "Asia/Qatar",
-  "PT": "Europe/Lisbon",
-  "ES": "Europe/Madrid",
-  "FR": "Europe/Paris",
-  "IT": "Europe/Rome",
-  "DE": "Europe/Berlin",
-  "NL": "Europe/Amsterdam",
-  "KZ": "Asia/Almaty",
-  "GB": "Europe/London",
-  "AT": "Europe/Vienna",
-  "SM": "Europe/Rome",
-  "IN": "Asia/Kolkata",
-  "ID": "Asia/Makassar",
-  "JP": "Asia/Tokyo",
-  "AU": "Australia/Melbourne",
-  "TH": "Asia/Bangkok",
-  "MY": "Asia/Kuala_Lumpur",
-  "US": "America/Chicago",
-  "AR": "America/Argentina/Buenos_Aires",
-  "CZ": "Europe/Prague",
-  "HU": "Europe/Budapest"
-};
 
 function loadManualSchedule() {
   try {
@@ -71,6 +48,21 @@ function saveCache(data) {
   }
 }
 
+function normalizeCacheSessions(sessions, countryIso) {
+  if (!Array.isArray(sessions)) return sessions;
+  return sessions.map((session) => ({
+    ...session,
+    start: normalizeStoredStart(session.start, countryIso)
+  }));
+}
+
+function isCacheFresh(cache) {
+  if (!cache || !cache.timestamp) return false;
+  if (cache.schemaVersion !== CACHE_SCHEMA_VERSION) return false;
+  const cacheDuration = 24 * 60 * 60 * 1000;
+  return Date.now() - cache.timestamp < cacheDuration;
+}
+
 async function fetchMotoGPSchedule() {
   const seasonsRes = await fetch("https://api.motogp.pulselive.com/motogp/v1/results/seasons");
   const seasons = await seasonsRes.json();
@@ -88,12 +80,12 @@ async function fetchMotoGPSchedule() {
 
   const eventsRes = await fetch(`https://api.motogp.pulselive.com/motogp/v1/results/events?seasonUuid=${currentSeason.id}`);
   const events = await eventsRes.json();
-  
+
   const nonTestEvents = events
     .filter(e => !e.test)
     .sort((a, b) => a.date_start.localeCompare(b.date_start));
 
-  const todayStr = dayjs().format("YYYY-MM-DD");
+  const todayStr = getMotoGpTodayDateString();
   const activeEvent = nonTestEvents.find(e => e.date_end >= todayStr);
   if (!activeEvent) {
     throw new Error("No active or upcoming MotoGP event found");
@@ -106,17 +98,9 @@ async function fetchMotoGPSchedule() {
   }
 
   const countryIso = activeEvent.country?.iso;
-  const tzName = COUNTRY_TIMEZONES[countryIso] || "UTC";
-  const convertSessionTime = (rawDate) => {
-    if (!rawDate) return rawDate;
-    const localTimePart = rawDate.slice(0, 19);
-    return dayjs.tz(localTimePart, tzName).toISOString();
-  };
-
   const parsedSessions = [];
   const eventName = activeEvent.name;
 
-  // 1. Qualifying (Earliest Q session)
   const qSessions = sessions
     .filter(s => s.type === "Q")
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -126,12 +110,11 @@ async function fetchMotoGPSchedule() {
       type: "Q",
       name: "MotoGP Qualifying",
       event: eventName,
-      start: convertSessionTime(qSessions[0].date),
+      start: parseMotoGpApiDate(qSessions[0].date, countryIso),
       reminded: false
     });
   }
 
-  // 2. Sprint (If present)
   const sprintSession = sessions.find(s => s.type === "SPR");
   if (sprintSession) {
     parsedSessions.push({
@@ -139,12 +122,11 @@ async function fetchMotoGPSchedule() {
       type: "SPR",
       name: "MotoGP Sprint",
       event: eventName,
-      start: convertSessionTime(sprintSession.date),
+      start: parseMotoGpApiDate(sprintSession.date, countryIso),
       reminded: false
     });
   }
 
-  // 3. Race
   const raceSession = sessions.find(s => s.type === "RAC");
   if (raceSession) {
     parsedSessions.push({
@@ -152,7 +134,7 @@ async function fetchMotoGPSchedule() {
       type: "RAC",
       name: "MotoGP Race",
       event: eventName,
-      start: convertSessionTime(raceSession.date),
+      start: parseMotoGpApiDate(raceSession.date, countryIso),
       reminded: false
     });
   }
@@ -160,7 +142,8 @@ async function fetchMotoGPSchedule() {
   return {
     sessions: parsedSessions,
     eventUuid: activeEvent.id,
-    categoryUuid: motoGPCat.id
+    categoryUuid: motoGPCat.id,
+    countryIso
   };
 }
 
@@ -185,30 +168,27 @@ async function getSchedule() {
 
   let motoGPSessions = [];
   let cache = loadCache();
-  const cacheDuration = 24 * 60 * 60 * 1000;
 
-  let useCached = false;
-  if (cache && cache.timestamp && (Date.now() - cache.timestamp < cacheDuration)) {
-    useCached = true;
-    motoGPSessions = cache.sessions;
-  }
-
-  if (!useCached) {
+  if (isCacheFresh(cache)) {
+    motoGPSessions = normalizeCacheSessions(cache.sessions, cache.countryIso);
+  } else {
     try {
       console.log("🌐 Fetching current MotoGP schedule from API...");
-      const { sessions: fetchedSessions, eventUuid, categoryUuid } = await fetchMotoGPSchedule();
+      const { sessions: fetchedSessions, eventUuid, categoryUuid, countryIso } = await fetchMotoGPSchedule();
       let newSessions = fetchedSessions;
-      
+
       if (cache && cache.sessions) {
         newSessions = mergeRemindedStates(newSessions, cache.sessions);
       }
       newSessions = mergeRemindedStates(newSessions, manualData.sessions);
 
       saveCache({
+        schemaVersion: CACHE_SCHEMA_VERSION,
         timestamp: Date.now(),
         lastAnnouncedEvent: cache ? cache.lastAnnouncedEvent : undefined,
         eventUuid,
         categoryUuid,
+        countryIso,
         sessions: newSessions
       });
       motoGPSessions = newSessions;
@@ -217,7 +197,7 @@ async function getSchedule() {
       console.error("❌ Failed to fetch MotoGP schedule from API:", err.message);
       if (cache && cache.sessions) {
         console.log("⚠️ Using expired MotoGP cache as fallback");
-        motoGPSessions = cache.sessions;
+        motoGPSessions = normalizeCacheSessions(cache.sessions, cache.countryIso);
       } else {
         console.log("⚠️ Falling back to MotoGP schedule from schedule.json");
         motoGPSessions = manualData.sessions.filter(s => !s.event.includes("Formula 1"));
@@ -302,10 +282,10 @@ async function checkAndPostResults(client) {
     const cache = loadCache();
     if (!cache || !cache.sessions) return;
 
-    const targetSessions = cache.sessions.filter(s => 
-      (s.type === "SPR" || s.type === "RAC") && 
-      !s.resultsPosted && 
-      Date.now() > new Date(s.start).getTime()
+    const targetSessions = cache.sessions.filter(s =>
+      (s.type === "SPR" || s.type === "RAC") &&
+      !s.resultsPosted &&
+      isMotoGpSessionPast(s.start)
     );
 
     if (targetSessions.length === 0) return;
@@ -322,13 +302,13 @@ async function checkAndPostResults(client) {
       const apiSession = apiSessions.find(s => s.id === targetSession.id);
       if (apiSession && apiSession.status === "FINISHED") {
         console.log(`🏁 MotoGP session ${targetSession.name} is FINISHED! Fetching results...`);
-        
+
         const classRes = await fetch(`https://api.motogp.pulselive.com/motogp/v1/results/session/${targetSession.id}/classification`);
         const classData = await classRes.json();
-        
+
         if (classData && Array.isArray(classData.classification) && classData.classification.length >= 3) {
           const top3 = classData.classification.slice(0, 3);
-          
+
           const formatRider = (entry) => {
             const riderName = entry.rider.full_name;
             const teamName = entry.team?.name;
@@ -375,10 +355,28 @@ async function checkAndPostResults(client) {
   }
 }
 
+async function rebuildCache() {
+  const cache = loadCache();
+  const { sessions, eventUuid, categoryUuid, countryIso } = await fetchMotoGPSchedule();
+  const newSessions = mergeRemindedStates(sessions, cache?.sessions || []);
+  const payload = {
+    schemaVersion: CACHE_SCHEMA_VERSION,
+    timestamp: Date.now(),
+    lastAnnouncedEvent: cache?.lastAnnouncedEvent,
+    eventUuid,
+    categoryUuid,
+    countryIso,
+    sessions: newSessions
+  };
+  saveCache(payload);
+  return payload;
+}
+
 module.exports = {
   getSchedule,
   markReminded,
   hasAnnounced,
   markAnnounced,
-  checkAndPostResults
+  checkAndPostResults,
+  rebuildCache
 };

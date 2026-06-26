@@ -7,6 +7,10 @@ const {
   EmbedBuilder
 } = require("discord.js");
 const { IST } = require("./schedule");
+const {
+  DISPLAY_TIMEZONE_LABEL,
+  formatMotoGpRaceEmbedTime
+} = require("../utils/motogp-time");
 
 dayjs.extend(timezone);
 
@@ -50,12 +54,18 @@ function buildButtonRows(event, disabled = false) {
   return rows;
 }
 
-function formatCloseTime(closesAt) {
-  return dayjs(closesAt).tz(IST).format("ddd D MMM, HH:mm") + " IST";
+function formatCloseTime(closesAt, sport) {
+  if (sport === "motogp") {
+    return formatMotoGpRaceEmbedTime(closesAt);
+  }
+  return dayjs(closesAt).tz(IST).format("ddd D MMM, HH:mm") + ` ${DISPLAY_TIMEZONE_LABEL}`;
 }
 
-function formatRaceTime(raceStart) {
-  return dayjs(raceStart).tz(IST).format("ddd D MMM, HH:mm") + " IST";
+function formatRaceTime(raceStart, sport) {
+  if (sport === "motogp") {
+    return formatMotoGpRaceEmbedTime(raceStart);
+  }
+  return dayjs(raceStart).tz(IST).format("ddd D MMM, HH:mm") + ` ${DISPLAY_TIMEZONE_LABEL}`;
 }
 
 function buildPollEmbed(event, summary) {
@@ -75,12 +85,12 @@ function buildPollEmbed(event, summary) {
     .addFields(
       {
         name: "Race",
-        value: formatRaceTime(event.raceStart),
+        value: formatRaceTime(event.raceStart, event.sport),
         inline: true
       },
       {
         name: isClosed ? "Status" : "Closes",
-        value: isClosed ? "🔒 Closed" : formatCloseTime(event.closesAt),
+        value: isClosed ? "🔒 Closed" : formatCloseTime(event.closesAt, event.sport),
         inline: true
       },
       {

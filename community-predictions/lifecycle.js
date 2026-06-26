@@ -5,6 +5,7 @@ const { getCandidatesForSport } = require("./candidates");
 const { getRaceSessionForSport, getClosesAt } = require("./schedule");
 const { getChannelIdForSport } = require("./config");
 const { logPredictionError } = require("./logger");
+const { isMotoGpClosureReached } = require("../utils/motogp-time");
 const {
   buildButtonRows,
   buildPollEmbed,
@@ -39,7 +40,7 @@ async function openPoll(client, sport, { force = false } = {}) {
   console.log(`🗳️ Opening ${sportLabel} prediction poll: ${raceSession.eventName}`);
 
   const candidates = await getCandidatesForSport(sport);
-  const closesAt = getClosesAt(raceSession.raceStart);
+  const closesAt = getClosesAt(raceSession.raceStart, sport);
 
   const event = {
     eventId: raceSession.eventId,
@@ -116,7 +117,11 @@ async function recordVote(interaction, eventId, candidateId) {
     return { error: "🔒 Voting is closed for this race." };
   }
 
-  if (dayjs().isAfter(dayjs(event.closesAt))) {
+  if (event.sport === "motogp") {
+    if (isMotoGpClosureReached(event.closesAt)) {
+      return { error: "🔒 Voting has closed for this race." };
+    }
+  } else if (dayjs().isAfter(dayjs(event.closesAt))) {
     return { error: "🔒 Voting has closed for this race." };
   }
 

@@ -1,5 +1,9 @@
 const fs = require("fs");
 const path = require("path");
+const {
+  compareMotoGpCanonicalStarts,
+  isMotoGpClosureReached
+} = require("../utils/motogp-time");
 
 const PREDICTIONS_PATH = path.join(__dirname, "..", "predictions.json");
 
@@ -43,9 +47,12 @@ function findOpenEventForSport(data, sport) {
 }
 
 function findLatestEventForSport(data, sport) {
-  const events = Object.values(data.events)
-    .filter((e) => e.sport === sport)
-    .sort((a, b) => new Date(b.raceStart) - new Date(a.raceStart));
+  const events = Object.values(data.events).filter((e) => e.sport === sport);
+  if (sport === "motogp") {
+    events.sort((a, b) => compareMotoGpCanonicalStarts(b.raceStart, a.raceStart));
+  } else {
+    events.sort((a, b) => new Date(b.raceStart) - new Date(a.raceStart));
+  }
   return events[0] || null;
 }
 

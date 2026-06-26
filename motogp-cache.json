@@ -1,30 +1,32 @@
 {
-  "timestamp": 1781960401024,
-  "eventUuid": "f9d2e80c-431b-485f-afcf-671950648ad7",
+  "schemaVersion": 2,
+  "timestamp": 1782448594583,
+  "eventUuid": "83804cb1-a417-4213-b727-37f84b26d36e",
   "categoryUuid": "e8c110ad-64aa-4e8e-8a86-f2f152f6a942",
+  "countryIso": "NL",
   "sessions": [
     {
-      "id": "cc65ea7a-dc8f-4d58-a703-0b5fd6d9736e",
+      "id": "54dee180-65d1-498b-8671-32f2ce37a240",
       "type": "Q",
       "name": "MotoGP Qualifying",
-      "event": "GRAND PRIX OF CZECHIA",
-      "start": "2026-06-20T10:50:00+00:00",
+      "event": "GRAND PRIX OF THE NETHERLANDS",
+      "start": "2026-06-27T08:50:00.000Z",
       "reminded": false
     },
     {
-      "id": "bad8aad9-03cc-4789-bac1-c1f092215980",
+      "id": "61afb8ec-a541-4462-88d7-bd27d1434e62",
       "type": "SPR",
       "name": "MotoGP Sprint",
-      "event": "GRAND PRIX OF CZECHIA",
-      "start": "2026-06-20T15:00:00+00:00",
+      "event": "GRAND PRIX OF THE NETHERLANDS",
+      "start": "2026-06-27T13:00:00.000Z",
       "reminded": false
     },
     {
-      "id": "32a50043-07c4-48cb-94f5-cf02afa57ca9",
+      "id": "795e11c0-a313-4735-9c54-df93d06624b2",
       "type": "RAC",
       "name": "MotoGP Race",
-      "event": "GRAND PRIX OF CZECHIA",
-      "start": "2026-06-21T14:00:00+00:00",
+      "event": "GRAND PRIX OF THE NETHERLANDS",
+      "start": "2026-06-28T12:00:00.000Z",
       "reminded": false
     }
   ]
