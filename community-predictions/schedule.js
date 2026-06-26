@@ -54,21 +54,7 @@ function loadMotoGpCache() {
 }
 
 function getF1RaceSession() {
-  const data = loadScheduleJson();
-  const race = data.sessions.find(
-    (s) =>
-      s.event.includes("Formula 1") &&
-      (s.name.includes("Grand Prix") || s.name === "Formula 1 Grand Prix")
-  );
-  if (!race) return null;
-
-  return {
-    sport: "f1",
-    eventName: race.event === "Formula 1" ? "Formula 1 Grand Prix" : race.event,
-    sessionName: race.name,
-    raceStart: race.start,
-    eventId: buildEventId("f1", race.event, race.start)
-  };
+  return require("./f1-schedule").getF1RaceSessionFromSchedule();
 }
 
 function getMotoGPRaceSession() {
@@ -141,6 +127,7 @@ function getMotoGpRaceSessionFromCache() {
 module.exports = {
   IST,
   buildEventId,
+  loadScheduleJson,
   getF1RaceSession,
   getMotoGPRaceSession,
   getRaceSessionForSport,

@@ -15,20 +15,22 @@ const {
 const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(timezone);
 
-async function openPoll(client, sport, { force = false } = {}) {
+async function openPoll(client, sport, { force = false, raceSession = null } = {}) {
   const data = load();
-  const raceSession = getRaceSessionForSport(sport);
-  if (!raceSession) {
-    console.log(`[CommunityPredictions] No ${sport} race session found to open poll`);
+  const session = raceSession || getRaceSessionForSport(sport);
+  if (!session) {
     return null;
   }
 
-  const existing = data.events[raceSession.eventId];
-  if (existing && (existing.status === "open" || existing.status === "closed")) {
-    if (!force) {
-      console.log(`[CommunityPredictions] Poll already exists for ${raceSession.eventId}`);
-      return existing;
-    }
+  const existing = data.events[session.eventId];
+  if (
+    existing &&
+    (existing.status === "open" ||
+      existing.status === "closed" ||
+      existing.status === "completed") &&
+    !force
+  ) {
+    return existing;
   }
 
   const channelId = getChannelIdForSport(sport);
@@ -37,18 +39,17 @@ async function openPoll(client, sport, { force = false } = {}) {
   }
 
   const sportLabel = sport === "f1" ? "F1" : "MotoGP";
-  console.log(`🗳️ Opening ${sportLabel} prediction poll: ${raceSession.eventName}`);
 
   const candidates = await getCandidatesForSport(sport);
-  const closesAt = getClosesAt(raceSession.raceStart, sport);
+  const closesAt = getClosesAt(session.raceStart, sport);
 
   const event = {
-    eventId: raceSession.eventId,
+    eventId: session.eventId,
     sport,
-    eventName: raceSession.eventName,
+    eventName: session.eventName,
     type: "race_winner",
     status: "open",
-    raceStart: raceSession.raceStart,
+    raceStart: session.raceStart,
     closesAt,
     channelId,
     messageId: existing?.messageId || null,
@@ -58,7 +59,7 @@ async function openPoll(client, sport, { force = false } = {}) {
     communityResultsPosted: false,
     lastResultsPollAt: null,
     openedAt: new Date().toISOString(),
-    motogpSessionId: raceSession.sessionId || null
+    motogpSessionId: session.sessionId || null
   };
 
   const channel = await client.channels.fetch(channelId);
@@ -74,7 +75,7 @@ async function openPoll(client, sport, { force = false } = {}) {
   event.messageId = message.id;
   upsertEvent(data, event);
 
-  console.log(`🗳️ Opened ${sportLabel} prediction poll: ${event.eventName}`);
+  console.log(`[CP] ${sportLabel} poll opened: ${event.eventName}`);
   return event;
 }
 

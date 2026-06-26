@@ -4,11 +4,12 @@ const timezone = require("dayjs/plugin/timezone");
 const { load, upsertEvent } = require("./store");
 const { openPoll, closePoll, postCommunityResults } = require("./lifecycle");
 const {
-  getRaceSessionForSport,
+  getMotoGPRaceSession,
   isRaceThisWeekend,
   isMotoGpRaceResultsPosted,
   IST
 } = require("./schedule");
+const { getF1RaceSessionResolved } = require("./f1-schedule");
 const { isMotoGpClosureReached } = require("../utils/motogp-time");
 const { fetchMotoGpRaceWinner } = require("./candidates");
 const {
@@ -21,24 +22,54 @@ const { logPredictionError } = require("./logger");
 dayjs.extend(timezone);
 
 const SPORTS = ["f1", "motogp"];
+const RECONCILE_INTERVAL_MS = 10 * 60 * 1000;
 
-async function tryOpenWeekendPolls(client) {
+function pollExists(data, eventId) {
+  const existing = data.events[eventId];
+  return !!(
+    existing &&
+    (existing.status === "open" ||
+      existing.status === "closed" ||
+      existing.status === "completed")
+  );
+}
+
+async function resolveRaceSession(sport) {
+  if (sport === "f1") {
+    return getF1RaceSessionResolved();
+  }
+  return getMotoGPRaceSession();
+}
+
+async function reconcileWeekendPolls(client, reason = "tick") {
+  console.log(`[CP] Scheduler ${reason}`);
+
+  const data = load();
+
   for (const sport of SPORTS) {
     try {
-      const raceSession = getRaceSessionForSport(sport);
-      if (!raceSession) continue;
-
-      if (!isRaceThisWeekend(raceSession.raceStart, sport)) {
+      const raceSession = await resolveRaceSession(sport);
+      if (!raceSession) {
+        console.log(`[CP] ${sport}: poll skipped (no race session)`);
         continue;
       }
 
-      const data = load();
-      const existing = data.events[raceSession.eventId];
-      if (existing) continue;
+      if (!isRaceThisWeekend(raceSession.raceStart, sport)) {
+        console.log(`[CP] ${sport}: poll skipped (weekend not active)`);
+        continue;
+      }
 
-      await openPoll(client, sport);
+      console.log(`[CP] ${sport}: weekend detected (${raceSession.eventName})`);
+
+      if (pollExists(data, raceSession.eventId)) {
+        console.log(`[CP] ${sport}: poll exists`);
+        continue;
+      }
+
+      await openPoll(client, sport, { raceSession });
+      console.log(`[CP] ${sport}: poll created`);
     } catch (err) {
-      logPredictionError(`Failed to open ${sport} poll`, err);
+      logPredictionError(`Failed to reconcile ${sport} poll`, err);
     }
   }
 }
@@ -101,6 +132,18 @@ async function checkCommunityResults(client) {
   }
 }
 
+async function schedulerTick(client, reason) {
+  if (!isCommunityPredictionsEnabled()) return;
+
+  try {
+    await reconcileWeekendPolls(client, reason);
+    await checkClosures(client);
+    await checkCommunityResults(client);
+  } catch (err) {
+    logPredictionError("Scheduler tick failed", err);
+  }
+}
+
 function startScheduler(client) {
   if (!isCommunityPredictionsEnabled()) {
     return;
@@ -108,32 +151,19 @@ function startScheduler(client) {
 
   cron.schedule(
     "0 18 * * 5",
-    async () => {
-      await tryOpenWeekendPolls(client);
-    },
+    () => schedulerTick(client, "friday-cron"),
     { timezone: IST }
   );
 
-  setInterval(async () => {
-    if (!isCommunityPredictionsEnabled()) return;
+  setInterval(() => schedulerTick(client, "tick"), RECONCILE_INTERVAL_MS);
 
-    try {
-      await checkClosures(client);
-      await checkCommunityResults(client);
-    } catch (err) {
-      logPredictionError("Scheduler tick failed", err);
-    }
-  }, 60000);
-
-  setTimeout(async () => {
-    if (!isCommunityPredictionsEnabled()) return;
-
-    const now = dayjs().tz(IST);
-    if (now.day() === 5 && now.hour() >= 18) {
-      await tryOpenWeekendPolls(client);
-    }
-    await checkClosures(client);
-  }, 5000);
+  setTimeout(() => schedulerTick(client, "startup"), 5000);
 }
 
-module.exports = { startScheduler, tryOpenWeekendPolls, checkClosures, checkCommunityResults };
+module.exports = {
+  startScheduler,
+  reconcileWeekendPolls,
+  schedulerTick,
+  checkClosures,
+  checkCommunityResults
+};

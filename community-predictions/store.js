@@ -1,9 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const {
-  compareMotoGpCanonicalStarts,
-  isMotoGpClosureReached
-} = require("../utils/motogp-time");
+const { compareMotoGpCanonicalStarts } = require("../utils/motogp-time");
 
 const PREDICTIONS_PATH = path.join(__dirname, "..", "predictions.json");
 
