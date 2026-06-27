@@ -187,10 +187,11 @@ try {
       ? dayjs(session.start).diff(dayjs(), "minute")
       : getMotoGpMinutesUntilStart(session.start);
 
-    if (
-      minutesUntilStart <= 15 &&
-      minutesUntilStart >= 0
-    ) {
+    const inReminderWindow = isF1
+      ? minutesUntilStart <= 15 && minutesUntilStart >= 0
+      : minutesUntilStart <= 15 && minutesUntilStart >= 14;
+
+    if (inReminderWindow) {
 
       const channelId = isF1 ? process.env.CHANNEL_ID : process.env.MOTOGP_CHANNEL_ID;
       const channel = await client.channels.fetch(channelId);

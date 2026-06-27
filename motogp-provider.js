@@ -147,10 +147,21 @@ async function fetchMotoGPSchedule() {
   };
 }
 
+function findMotoGpSessionMatch(sessions, session) {
+  if (!sessions || !session) return null;
+  if (session.id) {
+    const byId = sessions.find((s) => s.id === session.id);
+    if (byId) return byId;
+  }
+  return sessions.find((s) => s.event === session.event && s.name === session.name);
+}
+
 function mergeRemindedStates(newSessions, previousSessions) {
   if (!previousSessions || !Array.isArray(previousSessions)) return newSessions;
-  return newSessions.map(newSession => {
-    const prev = previousSessions.find(p => p.event === newSession.event && p.name === newSession.name);
+  return newSessions.map((newSession) => {
+    const prev =
+      (newSession.id && previousSessions.find((p) => p.id === newSession.id)) ||
+      previousSessions.find((p) => p.event === newSession.event && p.name === newSession.name);
     if (prev) {
       return {
         ...newSession,
@@ -231,34 +242,18 @@ function markReminded(session) {
     return;
   }
 
-  let cacheUpdated = false;
   const cache = loadCache();
   if (cache && cache.sessions) {
-    const target = cache.sessions.find(s => s.event === session.event && s.name === session.name && s.start === session.start);
+    const target = findMotoGpSessionMatch(cache.sessions, session);
     if (target) {
       target.reminded = true;
       saveCache(cache);
-      cacheUpdated = true;
       console.log(`✅ MotoGP reminder marked in cache for ${session.name}`);
+      return;
     }
   }
 
-  const manualData = loadManualSchedule();
-  const targetManual = manualData.sessions.find(s => s.event === session.event && s.name === session.name && s.start === session.start);
-  if (targetManual) {
-    targetManual.reminded = true;
-    saveManualSchedule(manualData);
-    console.log(`✅ MotoGP reminder marked in schedule.json for ${session.name}`);
-  } else if (!cacheUpdated) {
-    manualData.sessions.push({
-      name: session.name,
-      event: session.event,
-      start: session.start,
-      reminded: true
-    });
-    saveManualSchedule(manualData);
-    console.log(`✅ MotoGP reminder appended to schedule.json for ${session.name}`);
-  }
+  console.error(`❌ MotoGP reminder not persisted — session not found in cache: ${session.name}`);
 }
 
 function getFlagEmoji(countryCode) {

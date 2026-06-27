@@ -146,16 +146,23 @@ function isMotoGpClosureReached(canonicalClosesAt) {
 }
 
 /**
+ * True when `start` is already a canonical UTC instant from `parseMotoGpApiDate()`
+ * (ends with `Z`). These must not be re-interpreted as circuit-local wall clock.
+ */
+function isCanonicalUtcIso(value) {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/i.test(String(value));
+}
+
+/**
  * Re-normalize a stored `start` value. Handles legacy cache entries that still
  * contain raw API strings with the misleading +00:00 offset.
  */
 function normalizeStoredStart(storedStart, countryIso) {
   if (!storedStart) return storedStart;
-  const reparsed = parseMotoGpApiDate(storedStart, countryIso);
-  if (toMotoGpDayjs(storedStart).valueOf() === toMotoGpDayjs(reparsed).valueOf()) {
+  if (isCanonicalUtcIso(storedStart)) {
     return toMotoGpDayjs(storedStart).toISOString();
   }
-  return reparsed;
+  return toMotoGpDayjs(parseMotoGpApiDate(storedStart, countryIso)).toISOString();
 }
 
 function parseMotoGpSession(apiSession, countryIso) {
