@@ -1,9 +1,8 @@
 const dayjs = require("dayjs");
-const { load, save, upsertEvent, getEvent } = require("./store");
+const { load, upsertEvent, getEvent } = require("./store");
 const { aggregateEvent, buildFinalSnapshot } = require("./aggregator");
-const { getCandidatesForSport } = require("./candidates");
-const { getRaceSessionForSport, getClosesAt } = require("./schedule");
-const { getChannelIdForSport } = require("./config");
+const { createPrediction } = require("./create-prediction");
+const { publishDiscordPoll } = require("./publishers/discord-publisher");
 const { logPredictionError } = require("./logger");
 const { isMotoGpClosureReached } = require("../utils/motogp-time");
 const {
@@ -16,67 +15,16 @@ const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(timezone);
 
 async function openPoll(client, sport, { force = false, raceSession = null } = {}) {
-  const data = load();
-  const session = raceSession || getRaceSessionForSport(sport);
-  if (!session) {
+  const result = await createPrediction(sport, { force, raceSession });
+  if (!result) {
     return null;
   }
 
-  const existing = data.events[session.eventId];
-  if (
-    existing &&
-    (existing.status === "open" ||
-      existing.status === "closed" ||
-      existing.status === "completed") &&
-    !force
-  ) {
-    return existing;
+  if (!result.created) {
+    return result.event;
   }
 
-  const channelId = getChannelIdForSport(sport);
-  if (!channelId) {
-    throw new Error(`Missing channel ID for sport: ${sport}`);
-  }
-
-  const sportLabel = sport === "f1" ? "F1" : "MotoGP";
-
-  const candidates = await getCandidatesForSport(sport);
-  const closesAt = getClosesAt(session.raceStart, sport);
-
-  const event = {
-    eventId: session.eventId,
-    sport,
-    eventName: session.eventName,
-    type: "race_winner",
-    status: "open",
-    raceStart: session.raceStart,
-    closesAt,
-    channelId,
-    messageId: existing?.messageId || null,
-    candidates,
-    votes: existing?.status === "open" ? existing.votes || {} : {},
-    final: null,
-    communityResultsPosted: false,
-    lastResultsPollAt: null,
-    openedAt: new Date().toISOString(),
-    motogpSessionId: session.sessionId || null
-  };
-
-  const channel = await client.channels.fetch(channelId);
-  const summary = aggregateEvent(event);
-  const embed = buildPollEmbed(event, summary);
-  const components = buildButtonRows(event, false);
-
-  const message = await channel.send({
-    embeds: [embed],
-    components
-  });
-
-  event.messageId = message.id;
-  upsertEvent(data, event);
-
-  console.log(`[CP] ${sportLabel} poll opened: ${event.eventName}`);
-  return event;
+  return publishDiscordPoll(client, result.event);
 }
 
 async function closePoll(client, eventId) {

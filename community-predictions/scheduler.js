@@ -2,7 +2,10 @@ const cron = require("node-cron");
 const dayjs = require("dayjs");
 const timezone = require("dayjs/plugin/timezone");
 const { load, upsertEvent } = require("./store");
-const { openPoll, closePoll, postCommunityResults } = require("./lifecycle");
+const { closePoll, postCommunityResults } = require("./lifecycle");
+const { createPrediction } = require("./create-prediction");
+const { publishDiscordPoll } = require("./publishers/discord-publisher");
+const { publishRedditPrediction } = require("../src/reddit/publisher");
 const {
   getMotoGPRaceSession,
   isRaceThisWeekend,
@@ -62,12 +65,42 @@ async function reconcileWeekendPolls(client, reason = "tick") {
       console.log(`[CP] ${sport}: weekend detected (${raceSession.eventName})`);
 
       if (pollExists(data, raceSession.eventId)) {
+        if (sport === "motogp") {
+          const freshData = load();
+          const existing = freshData.events[raceSession.eventId];
+          if (existing && !existing.redditPostId) {
+            try {
+              await publishRedditPrediction(existing);
+            } catch (err) {
+              console.error(`[Reddit] Publish failed: ${err.message}`);
+            }
+          }
+        }
+
         console.log(`[CP] ${sport}: poll exists`);
         continue;
       }
 
-      await openPoll(client, sport, { raceSession });
-      console.log(`[CP] ${sport}: poll created`);
+      const created = await createPrediction(sport, { raceSession });
+      if (!created || !created.created) {
+        continue;
+      }
+
+      let event = created.event;
+      try {
+        event = await publishDiscordPoll(client, created.event);
+        console.log(`[CP] ${sport}: poll created`);
+      } catch (err) {
+        logPredictionError(`Failed to publish ${sport} poll to Discord`, err);
+      }
+
+      if (sport === "motogp") {
+        try {
+          await publishRedditPrediction(event);
+        } catch (err) {
+          console.error(`[Reddit] Publish failed: ${err.message}`);
+        }
+      }
     } catch (err) {
       logPredictionError(`Failed to reconcile ${sport} poll`, err);
     }

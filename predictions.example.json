@@ -22,7 +22,9 @@
         "candidates": []
       },
       "communityResultsPosted": false,
-      "openedAt": "2026-06-27T12:30:00.000Z"
+      "openedAt": "2026-06-27T12:30:00.000Z",
+      "redditPostId": null,
+      "redditPostedAt": null
     }
   }
 }
