@@ -193,7 +193,9 @@ try {
 
     if (inReminderWindow) {
 
-      const channelId = isF1 ? process.env.CHANNEL_ID : process.env.MOTOGP_CHANNEL_ID;
+      const channelId = isF1
+        ? process.env.F1_CHANNEL_ID
+        : process.env.MOTOGP_CHANNEL_ID;
       const channel = await client.channels.fetch(channelId);
 
       const showSupport = Math.random() < 0.3;

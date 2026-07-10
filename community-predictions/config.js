@@ -17,7 +17,7 @@ function loadCommunityConfig() {
 
   cachedConfig = {
     enabled: parseBoolean(process.env.ENABLE_COMMUNITY_PREDICTIONS, true),
-    f1MandramChannelId: process.env.F1_MANDRAM_CHANNEL_ID?.trim() || "",
+    f1ChannelId: process.env.F1_CHANNEL_ID?.trim() || "",
     motogpChannelId: process.env.MOTOGP_CHANNEL_ID?.trim() || "",
     apiPort: Number(process.env.API_PORT) || 3001
   };
@@ -28,8 +28,8 @@ function loadCommunityConfig() {
 function validateEnabledConfig(config = loadCommunityConfig()) {
   const missing = [];
 
-  if (!config.f1MandramChannelId) {
-    missing.push("F1_MANDRAM_CHANNEL_ID");
+  if (!config.f1ChannelId) {
+    missing.push("F1_CHANNEL_ID");
   }
   if (!config.motogpChannelId) {
     missing.push("MOTOGP_CHANNEL_ID");
@@ -48,7 +48,7 @@ function isCommunityPredictionsEnabled() {
 function getChannelIdForSport(sport) {
   const config = loadCommunityConfig();
   if (sport === "f1") {
-    return config.f1MandramChannelId;
+    return config.f1ChannelId;
   }
   if (sport === "motogp") {
     return config.motogpChannelId;

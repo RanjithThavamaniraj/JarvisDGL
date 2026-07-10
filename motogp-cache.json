@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "timestamp": 1782448594583,
+  "timestamp": 1782545055973,
   "eventUuid": "83804cb1-a417-4213-b727-37f84b26d36e",
   "categoryUuid": "e8c110ad-64aa-4e8e-8a86-f2f152f6a942",
   "countryIso": "NL",
@@ -11,7 +11,8 @@
       "name": "MotoGP Qualifying",
       "event": "GRAND PRIX OF THE NETHERLANDS",
       "start": "2026-06-27T08:50:00.000Z",
-      "reminded": false
+      "reminded": false,
+      "resultsPosted": false
     },
     {
       "id": "61afb8ec-a541-4462-88d7-bd27d1434e62",
@@ -19,7 +20,8 @@
       "name": "MotoGP Sprint",
       "event": "GRAND PRIX OF THE NETHERLANDS",
       "start": "2026-06-27T13:00:00.000Z",
-      "reminded": false
+      "reminded": false,
+      "resultsPosted": false
     },
     {
       "id": "795e11c0-a313-4735-9c54-df93d06624b2",
@@ -27,7 +29,8 @@
       "name": "MotoGP Race",
       "event": "GRAND PRIX OF THE NETHERLANDS",
       "start": "2026-06-28T12:00:00.000Z",
-      "reminded": false
+      "reminded": false,
+      "resultsPosted": false
     }
   ]
 }
