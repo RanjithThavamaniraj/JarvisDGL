@@ -10,13 +10,13 @@ const {
   isMotoGpRaceThisWeekend,
   normalizeStoredStart
 } = require("../utils/motogp-time");
+const { getMotoGpCache } = require("../motogp-provider");
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const IST = DISPLAY_TIMEZONE;
 const SCHEDULE_PATH = path.join(__dirname, "..", "schedule.json");
-const CACHE_PATH = path.join(__dirname, "..", "motogp-cache.json");
 
 function slugify(text) {
   return String(text)
@@ -42,30 +42,28 @@ function loadScheduleJson() {
   return { sessions: [] };
 }
 
-function loadMotoGpCache() {
-  try {
-    if (fs.existsSync(CACHE_PATH)) {
-      return JSON.parse(fs.readFileSync(CACHE_PATH, "utf8"));
-    }
-  } catch (err) {
-    console.error("[CommunityPredictions] motogp-cache.json read error:", err);
-  }
-  return null;
-}
-
 function getF1RaceSession() {
   return require("./f1-schedule").getF1RaceSessionFromSchedule();
 }
 
-function getMotoGPRaceSession() {
-  const cache = loadMotoGpCache();
-  if (!cache || !Array.isArray(cache.sessions)) return null;
+async function getMotoGPRaceSession() {
+  const cache = await getMotoGpCache();
+  if (!cache || !Array.isArray(cache.sessions)) {
+    console.log("[MotoGP] No race session available (cache empty)");
+    return null;
+  }
 
   const race = cache.sessions.find((s) => s.name === "MotoGP Race");
-  if (!race) return null;
+  if (!race) {
+    console.log("[MotoGP] No race session available (no RAC session in cache)");
+    return null;
+  }
 
   const eventName = formatMotoGpEventName(race.event);
   const raceStart = normalizeStoredStart(race.start, cache.countryIso);
+
+  console.log(`[MotoGP] Current event: ${eventName}`);
+  console.log(`[MotoGP] Race date: ${raceStart}`);
 
   return {
     sport: "motogp",
@@ -87,9 +85,9 @@ function formatMotoGpEventName(name) {
     .replace(/\bOf\b/g, "of");
 }
 
-function getRaceSessionForSport(sport) {
+async function getRaceSessionForSport(sport) {
   if (sport === "f1") return getF1RaceSession();
-  if (sport === "motogp") return getMotoGPRaceSession();
+  if (sport === "motogp") return await getMotoGPRaceSession();
   return null;
 }
 
@@ -111,15 +109,15 @@ function isRaceThisWeekend(raceStart, sport) {
   return !race.isBefore(fridayStart) && race.isBefore(mondayEnd);
 }
 
-function isMotoGpRaceResultsPosted() {
-  const cache = loadMotoGpCache();
+async function isMotoGpRaceResultsPosted() {
+  const cache = await getMotoGpCache();
   if (!cache || !Array.isArray(cache.sessions)) return false;
   const race = cache.sessions.find((s) => s.type === "RAC");
   return !!(race && race.resultsPosted);
 }
 
-function getMotoGpRaceSessionFromCache() {
-  const cache = loadMotoGpCache();
+async function getMotoGpRaceSessionFromCache() {
+  const cache = await getMotoGpCache();
   if (!cache || !Array.isArray(cache.sessions)) return null;
   return cache.sessions.find((s) => s.type === "RAC") || null;
 }
@@ -135,6 +133,5 @@ module.exports = {
   isRaceThisWeekend,
   isMotoGpRaceResultsPosted,
   getMotoGpRaceSessionFromCache,
-  loadMotoGpCache,
   formatMotoGpEventName
 };

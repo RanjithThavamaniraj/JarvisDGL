@@ -15,6 +15,7 @@ const {
 const { getF1RaceSessionResolved } = require("./f1-schedule");
 const { isMotoGpClosureReached } = require("../utils/motogp-time");
 const { fetchMotoGpRaceWinner } = require("./candidates");
+const { getMotoGpCache } = require("../motogp-provider");
 const {
   shouldPollF1Results,
   fetchF1RaceWinnerForEvent
@@ -41,11 +42,16 @@ async function resolveRaceSession(sport) {
   if (sport === "f1") {
     return getF1RaceSessionResolved();
   }
-  return getMotoGPRaceSession();
+  return await getMotoGPRaceSession();
 }
 
 async function reconcileWeekendPolls(client, reason = "tick") {
   console.log(`[CP] Scheduler ${reason}`);
+
+  const cache = await getMotoGpCache();
+  if (!cache) {
+    console.log("[CP] MotoGP: poll skipped (no schedule available)");
+  }
 
   const data = load();
 
@@ -56,6 +62,8 @@ async function reconcileWeekendPolls(client, reason = "tick") {
         console.log(`[CP] ${sport}: poll skipped (no race session)`);
         continue;
       }
+
+      console.log(`[CP] ${sport}: current event: ${raceSession.eventName}, race start: ${raceSession.raceStart}`);
 
       if (!isRaceThisWeekend(raceSession.raceStart, sport)) {
         console.log(`[CP] ${sport}: poll skipped (weekend not active)`);
@@ -77,19 +85,20 @@ async function reconcileWeekendPolls(client, reason = "tick") {
           }
         }
 
-        console.log(`[CP] ${sport}: poll exists`);
+        console.log(`[CP] ${sport}: poll skipped (already exists)`);
         continue;
       }
 
       const created = await createPrediction(sport, { raceSession });
       if (!created || !created.created) {
+        console.log(`[CP] ${sport}: poll skipped (createPrediction returned false)`);
         continue;
       }
 
       let event = created.event;
       try {
         event = await publishDiscordPoll(client, created.event);
-        console.log(`[CP] ${sport}: poll created`);
+        console.log(`[CP] ${sport}: prediction created (${raceSession.eventName})`);
       } catch (err) {
         logPredictionError(`Failed to publish ${sport} poll to Discord`, err);
       }
@@ -139,7 +148,7 @@ async function checkCommunityResults(client) {
 
     try {
       if (event.sport === "motogp") {
-        if (!isMotoGpRaceResultsPosted()) continue;
+        if (!(await isMotoGpRaceResultsPosted())) continue;
 
         const winner = await fetchMotoGpRaceWinner();
         if (!winner) continue;

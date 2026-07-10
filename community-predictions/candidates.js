@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
-const { loadMotoGpCache, formatMotoGpEventName } = require("./schedule");
+const { formatMotoGpEventName } = require("./schedule");
+const { getMotoGpCache } = require("../motogp-provider");
 
 const F1_CANDIDATES_PATH = path.join(__dirname, "..", "data", "f1-candidates.json");
 const MOTOGP_CANDIDATES_PATH = path.join(__dirname, "..", "data", "motogp-candidates.json");
@@ -133,7 +134,7 @@ async function fetchMotoGpCandidates() {
   const sources = [];
 
   try {
-    const cache = loadMotoGpCache();
+    const cache = await getMotoGpCache();
     if (cache?.eventUuid && cache?.categoryUuid) {
       const sessionsRes = await fetch(
         `${MOTOGP_API_BASE}/sessions?eventUuid=${cache.eventUuid}&categoryUuid=${cache.categoryUuid}`
@@ -211,7 +212,7 @@ function matchCandidateToWinner(candidates, winnerName) {
 }
 
 async function fetchMotoGpRaceWinner() {
-  const cache = loadMotoGpCache();
+  const cache = await getMotoGpCache();
   const race = cache?.sessions?.find((s) => s.type === "RAC");
   if (!race || !race.id) return null;
 

@@ -5,7 +5,7 @@ const { getChannelIdForSport } = require("./config");
 
 async function createPrediction(sport, { force = false, raceSession = null } = {}) {
   const data = load();
-  const session = raceSession || getRaceSessionForSport(sport);
+  const session = raceSession || await getRaceSessionForSport(sport);
   if (!session) {
     return null;
   }

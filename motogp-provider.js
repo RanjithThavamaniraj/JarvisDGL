@@ -367,8 +367,45 @@ async function rebuildCache() {
   return payload;
 }
 
+async function getMotoGpCache() {
+  const cache = loadCache();
+  if (isCacheFresh(cache)) {
+    console.log("[MotoGP] Cache reused (fresh)");
+    return cache;
+  }
+  console.log("[MotoGP] Cache stale, refreshing from API...");
+  try {
+    const { sessions: fetchedSessions, eventUuid, categoryUuid, countryIso } = await fetchMotoGPSchedule();
+    let newSessions = fetchedSessions;
+    if (cache && cache.sessions) {
+      newSessions = mergeRemindedStates(newSessions, cache.sessions);
+    }
+    const payload = {
+      schemaVersion: CACHE_SCHEMA_VERSION,
+      timestamp: Date.now(),
+      lastAnnouncedEvent: cache ? cache.lastAnnouncedEvent : undefined,
+      eventUuid,
+      categoryUuid,
+      countryIso,
+      sessions: newSessions
+    };
+    saveCache(payload);
+    console.log("[MotoGP] Cache refreshed from API");
+    return payload;
+  } catch (err) {
+    console.error("[MotoGP] Cache refresh failed:", err.message);
+    if (cache && cache.sessions) {
+      console.log("[MotoGP] Using stale cache as fallback (refresh failed)");
+      return cache;
+    }
+    console.log("[MotoGP] No cache available (refresh failed, no stale cache)");
+    return null;
+  }
+}
+
 module.exports = {
   getSchedule,
+  getMotoGpCache,
   markReminded,
   hasAnnounced,
   markAnnounced,

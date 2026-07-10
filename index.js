@@ -172,39 +172,44 @@ cron.schedule(
 
 // Race Reminder Scheduler
 const { getSchedule, markReminded, checkAndPostResults } = require("./motogp-provider");
+const { getF1SessionsForReminders, markF1Reminded } = require("./f1-reminder-provider");
 
 setInterval(async () => {
 try {
-  const sessions = await getSchedule();
+  const allSchedule = await getSchedule();
+  const motogpSessions = allSchedule.filter((s) => !s.event.includes("Formula 1"));
+  const f1Sessions = await getF1SessionsForReminders();
+  const sessions = [...motogpSessions, ...f1Sessions];
+
   await checkAndPostResults(client);
 
   for (const session of sessions) {
+    const isF1 = session.sport === "f1";
 
-    if (session.reminded) continue;
+    if (isF1) {
+      if (session.reminded) {
+        console.log(`[F1] Skipped because reminder already sent: ${session.name}`);
+        continue;
+      }
 
-    const isF1 = session.event.includes("Formula 1");
-    const minutesUntilStart = isF1
-      ? dayjs(session.start).diff(dayjs(), "minute")
-      : getMotoGpMinutesUntilStart(session.start);
+      const minutesUntilStart = dayjs(session.start).diff(dayjs(), "minute");
 
-    const inReminderWindow = isF1
-      ? minutesUntilStart <= 15 && minutesUntilStart >= 0
-      : minutesUntilStart <= 15 && minutesUntilStart >= 14;
+      if (minutesUntilStart < 0) {
+        console.log(`[F1] Session already finished: ${session.name}`);
+        continue;
+      }
 
-    if (inReminderWindow) {
+      if (minutesUntilStart > 15) {
+        console.log(`[F1] Waiting ${minutesUntilStart} minutes until reminder: ${session.name}`);
+        continue;
+      }
 
-      const channelId = isF1
-        ? process.env.F1_CHANNEL_ID
-        : process.env.MOTOGP_CHANNEL_ID;
-      const channel = await client.channels.fetch(channelId);
-
+      const channel = await client.channels.fetch(process.env.F1_CHANNEL_ID);
       const showSupport = Math.random() < 0.3;
       const supportFooter = showSupport ? "\n\n☕ *Support Pit Wall: Type `!support` or `!gear` to help keep Jarvis running!*" : "";
+      const start = dayjs(session.start);
 
-      if (isF1) {
-        const start = dayjs(session.start);
-
-        await channel.send(
+      await channel.send(
 
 `🏎️ **Hey F1 Fans!**
 
@@ -217,9 +222,23 @@ try {
 Get ready for lights out and an exciting race! 🔥${supportFooter}`
 );
 
-      } else {
+      markF1Reminded(session);
+      console.log(`[F1] ${session.name} reminder sent`);
+      continue;
+    }
 
-        await channel.send(
+    if (session.reminded) continue;
+
+    const minutesUntilStart = getMotoGpMinutesUntilStart(session.start);
+    const inReminderWindow = minutesUntilStart <= 15 && minutesUntilStart >= 14;
+
+    if (inReminderWindow) {
+      const channel = await client.channels.fetch(process.env.MOTOGP_CHANNEL_ID);
+
+      const showSupport = Math.random() < 0.3;
+      const supportFooter = showSupport ? "\n\n☕ *Support Pit Wall: Type `!support` or `!gear` to help keep Jarvis running!*" : "";
+
+      await channel.send(
 
 `🏍️ **Hey MotoGP Fans!**
 
@@ -231,8 +250,6 @@ Get ready for lights out and an exciting race! 🔥${supportFooter}`
 
 Grab your snacks and enjoy the action! 🔥${supportFooter}`
 );
-
-      }
 
       markReminded(session);
 
