@@ -70,6 +70,7 @@ function getF1RaceSessionFromSchedule() {
 
 async function fetchJolpicaSeasonRaces(year) {
   const res = await fetch(`${JOLPICA_BASE}/${year}.json?limit=30`);
+  console.log(`[F1] Jolpica API ${JOLPICA_BASE}/${year}.json → HTTP ${res.status}`);
   if (!res.ok) return [];
 
   const data = await res.json();
@@ -79,24 +80,38 @@ async function fetchJolpicaSeasonRaces(year) {
 /**
  * Resolve the current F1 race session. Uses schedule.json when it matches the
  * active weekend; otherwise falls back to the Jolpica/Ergast season calendar.
+ * Returns null when no race matches the current weekend — never returns a
+ * stale race from a previous weekend.
  */
 async function getF1RaceSessionResolved() {
   const fromSchedule = getF1RaceSessionFromSchedule();
   if (fromSchedule && isRaceThisWeekend(fromSchedule.raceStart)) {
+    console.log(`[F1] Current event: ${fromSchedule.eventName}`);
+    console.log(`[F1] Race date: ${fromSchedule.raceStart} (source: schedule.json)`);
     return fromSchedule;
   }
 
   const year = dayjs().tz(IST).year();
-  const races = await fetchJolpicaSeasonRaces(year);
+  let races = [];
+  try {
+    races = await fetchJolpicaSeasonRaces(year);
+  } catch (err) {
+    console.log(`[F1] Jolpica API request failed: ${err.message}`);
+    console.log("[F1] No active F1 weekend detected (API unavailable, no schedule match)");
+    return null;
+  }
 
   for (const race of races) {
     const session = toF1RaceSessionFromJolpica(race);
     if (isRaceThisWeekend(session.raceStart)) {
+      console.log(`[F1] Current event: ${session.eventName}`);
+      console.log(`[F1] Race date: ${session.raceStart} (source: Jolpica)`);
       return session;
     }
   }
 
-  return fromSchedule;
+  console.log("[F1] No active F1 weekend detected");
+  return null;
 }
 
 module.exports = {
