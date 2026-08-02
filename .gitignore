@@ -1,2 +1,4 @@
 .env
 predictions.json
+dgl-announcements-state.json
+dgl-announcements-state.json.tmp

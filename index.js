@@ -34,6 +34,11 @@ client.once("clientReady", async () => {
   const { logStartupStatus } = require("./community-predictions/config");
   logStartupStatus();
   require("./community-predictions").setup(client);
+
+  const { logStartupStatus: logDglStartupStatus } = require("./dgl-announcements/config");
+  logDglStartupStatus();
+  require("./dgl-announcements").setup(client);
+
   require("./api/server").start();
 
   let aiChannel;
