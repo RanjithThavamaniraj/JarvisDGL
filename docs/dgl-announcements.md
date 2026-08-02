@@ -1,24 +1,45 @@
-# DGL Announcements (Phase J1)
+# DGL Announcements
 
 Jarvis reacts to Daddy Gaming Lobby website events. The website is the source of truth.
 
-**Phase J1 scope:** `tournament_published` only — end-to-end Realtime → Discord.
-
-## Behaviour
+## Pipeline
 
 ```
 Website inserts community_activity
         ↓
 Supabase Realtime (postgres_changes INSERT)
         ↓
-Dispatcher (filters type)
+Dispatcher (handler registry)
         ↓
-tournament-published handler
+Type-specific handler
         ↓
 Discord DGL channel
 ```
 
 Jarvis is **read-only** against Supabase (anon key). Idempotency is stored locally in `dgl-announcements-state.json`.
+
+## Supported activity types (Phase J1 + J2)
+
+| `activity_type` | Handler file |
+| --- | --- |
+| `tournament_published` | `handlers/tournament-published.js` |
+| `giveaway_created` | `handlers/giveaway-created.js` |
+| `giveaway_completed` | `handlers/giveaway-completed.js` |
+
+## Adding a future handler
+
+1. Create `handlers/<kebab-name>.js` (e.g. `registration-opened.js`)
+2. Register it in `dispatcher.js` → `HANDLERS` under the snake_case key
+3. Optionally add the constant in `types.js` → `ACTIVITY_TYPES`
+
+Planned (not implemented):
+
+- `registration_opened` → `registration-opened.js`
+- `registration_closed` → `registration-closed.js`
+- `tournament_started` → `tournament-started.js`
+- `tournament_completed` → `tournament-completed.js`
+- `tournament_cancelled` → `tournament-cancelled.js`
+- `tournament_featured` → `tournament-featured.js`
 
 ## Environment
 
@@ -35,7 +56,7 @@ Jarvis is **read-only** against Supabase (anon key). Idempotency is stored local
 ## Supabase requirements (website project)
 
 1. Realtime enabled for `community_activity` (publication).
-2. RLS allows **anon SELECT** on rows Jarvis should see (or a secure public read policy for announcement-worthy rows).
+2. RLS allows **anon SELECT** on rows Jarvis should see.
 3. INSERT events must be visible to the anon Realtime subscription.
 
 ## Expected row shape
@@ -43,20 +64,10 @@ Jarvis is **read-only** against Supabase (anon key). Idempotency is stored local
 Minimum:
 
 - `id` (uuid) — idempotency key
-- `activity_type` (or `type`) = `tournament_published`
+- `activity_type` (or `type`)
 - `created_at`
-
-Optional payload (`payload` / `metadata` / `data`):
-
-- `name` / `tournament_name`
-- `game` / `game_name`
-- `starts_at` / `start_time`
-- `url` / `tournament_url`
+- `payload` (JSON) — handler-specific fields only; no Jarvis DB lookups
 
 ## Isolation
 
 This module does not import or modify MotoGP/F1/Community Predictions code.
-
-## Phase J2 (not implemented)
-
-Additional activity handlers, service-role acknowledgement writes, richer tournament lookups.

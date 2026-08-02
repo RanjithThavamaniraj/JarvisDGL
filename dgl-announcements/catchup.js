@@ -1,8 +1,11 @@
 const { getDglSupabaseClient } = require("./client");
 const { loadDglConfig } = require("./config");
 const { isProcessed, setLastCatchupAt } = require("./store");
-const { dispatchActivity, getActivityType } = require("./dispatcher");
-const { isSupportedActivityType } = require("./types");
+const {
+  dispatchActivity,
+  getActivityType,
+  isSupportedActivityType
+} = require("./dispatcher");
 
 /**
  * Pull recent community_activity rows and process any not yet claimed locally.

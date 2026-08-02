@@ -1,11 +1,11 @@
-const { publishToDglChannel, buildSimpleEmbed } = require("../publisher");
+const { publishToDglChannel, buildSimpleEmbed, DGL_EMBED_COLOR } = require("../publisher");
+const { extractPayload, pickFirst } = require("../payload");
 
 /**
  * Expected community_activity row shape (flexible):
  * - id: uuid (required for idempotency)
  * - activity_type / type: tournament_published
  * - payload / metadata / data: object with tournament fields
- * - title / message: optional preformatted text from website
  *
  * Payload fields used when present:
  * - name / tournament_name / title
@@ -13,33 +13,6 @@ const { publishToDglChannel, buildSimpleEmbed } = require("../publisher");
  * - starts_at / start_time / registration_opens_at
  * - url / tournament_url / link
  */
-function extractPayload(row) {
-  const raw =
-    row.payload ||
-    row.metadata ||
-    row.data ||
-    row.details ||
-    {};
-  return typeof raw === "string" ? safeJsonParse(raw) : raw || {};
-}
-
-function safeJsonParse(value) {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return {};
-  }
-}
-
-function pickFirst(...values) {
-  for (const value of values) {
-    if (value === undefined || value === null) continue;
-    const text = String(value).trim();
-    if (text) return text;
-  }
-  return null;
-}
-
 async function handleTournamentPublished(discordClient, row) {
   const payload = extractPayload(row);
 
@@ -77,7 +50,7 @@ async function handleTournamentPublished(discordClient, row) {
       pickFirst(row.message, row.body, payload.message) ||
       `**${tournamentName}** is now live on Daddy Gaming Lobby.\nRegistrations are open — don't miss out.`,
     fields,
-    color: 0xf59e0b
+    color: DGL_EMBED_COLOR
   });
 
   const message = await publishToDglChannel(discordClient, {

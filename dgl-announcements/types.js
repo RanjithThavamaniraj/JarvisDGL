@@ -1,40 +1,38 @@
-/** Activity types Jarvis recognizes in Phase J1. */
+/**
+ * Canonical activity_type values (snake_case).
+ * Handler files use kebab-case names matching these types, e.g.
+ *   giveaway_created      → handlers/giveaway-created.js
+ *   registration_opened   → handlers/registration-opened.js (future)
+ */
 const ACTIVITY_TYPES = {
-  TOURNAMENT_PUBLISHED: "tournament_published"
+  TOURNAMENT_PUBLISHED: "tournament_published",
+  GIVEAWAY_CREATED: "giveaway_created",
+  GIVEAWAY_COMPLETED: "giveaway_completed"
+  // Future (do not register until implemented):
+  // REGISTRATION_OPENED: "registration_opened",
+  // REGISTRATION_CLOSED: "registration_closed",
+  // TOURNAMENT_STARTED: "tournament_started",
+  // TOURNAMENT_COMPLETED: "tournament_completed",
+  // TOURNAMENT_CANCELLED: "tournament_cancelled",
+  // TOURNAMENT_FEATURED: "tournament_featured"
 };
 
-const SUPPORTED_ACTIVITY_TYPES = new Set([
-  ACTIVITY_TYPES.TOURNAMENT_PUBLISHED,
-  // Website may emit camelCase or UPPER variants — normalize before lookup
-  "TOURNAMENT_PUBLISHED",
-  "tournamentPublished"
-]);
-
+/**
+ * Normalize website variants (camelCase, kebab-case, UPPER) to snake_case.
+ */
 function normalizeActivityType(raw) {
   if (!raw) return null;
   const value = String(raw).trim();
   if (!value) return null;
 
-  const lower = value.toLowerCase();
-  if (
-    lower === "tournament_published" ||
-    lower === "tournamentpublished" ||
-    lower === "tournament-published"
-  ) {
-    return ACTIVITY_TYPES.TOURNAMENT_PUBLISHED;
-  }
-
-  return lower;
-}
-
-function isSupportedActivityType(raw) {
-  const normalized = normalizeActivityType(raw);
-  return normalized === ACTIVITY_TYPES.TOURNAMENT_PUBLISHED;
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .replace(/__+/g, "_")
+    .toLowerCase();
 }
 
 module.exports = {
   ACTIVITY_TYPES,
-  SUPPORTED_ACTIVITY_TYPES,
-  normalizeActivityType,
-  isSupportedActivityType
+  normalizeActivityType
 };

@@ -1,6 +1,11 @@
 const { EmbedBuilder } = require("discord.js");
 const { loadDglConfig } = require("./config");
 
+/** Shared brand colour for all DGL announcement embeds. */
+const DGL_EMBED_COLOR = 0xf59e0b;
+
+const GIVEAWAY_FOOTER = "DGL Community Giveaway";
+
 async function publishToDglChannel(discordClient, { content, embeds } = {}) {
   const { channelId } = loadDglConfig();
   if (!channelId) {
@@ -20,12 +25,21 @@ async function publishToDglChannel(discordClient, { content, embeds } = {}) {
   return message;
 }
 
-function buildSimpleEmbed({ title, description, fields = [], color = 0x5865f2 }) {
+function buildSimpleEmbed({
+  title,
+  description,
+  fields = [],
+  color = DGL_EMBED_COLOR,
+  footer = null
+} = {}) {
   const embed = new EmbedBuilder()
     .setTitle(title)
-    .setDescription(description)
     .setColor(color)
     .setTimestamp(new Date());
+
+  if (description) {
+    embed.setDescription(description);
+  }
 
   for (const field of fields) {
     if (!field?.name || !field?.value) continue;
@@ -36,10 +50,16 @@ function buildSimpleEmbed({ title, description, fields = [], color = 0x5865f2 })
     });
   }
 
+  if (footer) {
+    embed.setFooter({ text: String(footer).slice(0, 2048) });
+  }
+
   return embed;
 }
 
 module.exports = {
+  DGL_EMBED_COLOR,
+  GIVEAWAY_FOOTER,
   publishToDglChannel,
   buildSimpleEmbed
 };
