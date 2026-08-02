@@ -17,6 +17,7 @@
     "express": "^5.2.1",
     "node-cron": "^4.2.1",
     "rss-parser": "^3.13.0",
-    "snoowrap": "^1.23.0"
+    "snoowrap": "^1.23.0",
+    "ws": "^8.21.1"
   }
 }
