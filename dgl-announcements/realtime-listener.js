@@ -49,15 +49,6 @@ async function startRealtimeListener(discordClient) {
       async (payload) => {
         try {
           const row = payload.new;
-          const payloadObj =
-            row?.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
-              ? row.payload
-              : null;
-          console.log("[DGL] Realtime INSERT received", {
-            id: row?.id ?? null,
-            activity_type: row?.activity_type ?? row?.type ?? null,
-            payloadKeys: payloadObj ? Object.keys(payloadObj) : []
-          });
           await dispatchActivity(discordClient, row, "realtime");
         } catch (err) {
           console.error("[DGL] Realtime dispatch error:", err);

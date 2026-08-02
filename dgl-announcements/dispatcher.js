@@ -50,21 +50,7 @@ async function dispatchActivity(discordClient, row, source = "unknown") {
   const type = normalizeActivityType(rawType);
   const handler = type ? HANDLERS[type] : null;
 
-  console.log("[DGL] dispatch enter", {
-    source,
-    id: activityId,
-    rawType,
-    normalizedType: type,
-    handlerFound: !!handler
-  });
-
   if (!handler) {
-    console.log("[DGL] dispatch ignored unsupported_type", {
-      source,
-      id: activityId,
-      rawType,
-      normalizedType: type
-    });
     return { status: "ignored", reason: "unsupported_type", type: rawType };
   }
 
@@ -79,11 +65,6 @@ async function dispatchActivity(discordClient, row, source = "unknown") {
   }
 
   try {
-    console.log("[DGL] dispatch invoking handler", {
-      source,
-      id: activityId,
-      type
-    });
     const message = await handler(discordClient, row);
     markPosted(activityId, message.id);
     return { status: "posted", messageId: message.id, type };

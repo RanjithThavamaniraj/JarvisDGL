@@ -67,7 +67,7 @@ async function handleGiveawayCreated(discordClient, row) {
   });
 
   const message = await publishToDglChannel(discordClient, {
-    content: "📢 **DGL Giveaway**",
+    content: "@everyone\n\n📢 **DGL Giveaway**",
     embeds: [embed]
   });
 

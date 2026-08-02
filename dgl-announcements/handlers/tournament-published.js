@@ -54,7 +54,7 @@ async function handleTournamentPublished(discordClient, row) {
   });
 
   const message = await publishToDglChannel(discordClient, {
-    content: "📢 **DGL Update**",
+    content: "@everyone\n\n📢 **DGL Update**",
     embeds: [embed]
   });
 

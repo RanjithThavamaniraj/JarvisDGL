@@ -33,15 +33,6 @@ async function runCatchup(discordClient, reason = "manual") {
   }
 
   const rows = Array.isArray(data) ? data : [];
-  console.log("[DGL] Catch-up rows returned", {
-    reason,
-    count: rows.length,
-    rows: rows.map((r) => ({
-      id: r?.id ?? null,
-      activity_type: getActivityType(r)
-    }))
-  });
-
   // Process oldest first so announcements appear in chronological order
   const chronological = [...rows].reverse();
 
@@ -50,45 +41,12 @@ async function runCatchup(discordClient, reason = "manual") {
 
   for (const row of chronological) {
     scanned += 1;
-    if (!row?.id) {
-      console.log("[DGL] Catch-up skip", { reason, id: null, skipReason: "missing_id" });
-      continue;
-    }
-
-    if (isProcessed(row.id)) {
-      console.log("[DGL] Catch-up skip", {
-        reason,
-        id: row.id,
-        activity_type: getActivityType(row),
-        skipReason: "already_processed"
-      });
-      continue;
-    }
+    if (!row?.id || isProcessed(row.id)) continue;
 
     const rawType = getActivityType(row);
-    if (!isSupportedActivityType(rawType)) {
-      console.log("[DGL] Catch-up skip", {
-        reason,
-        id: row.id,
-        activity_type: rawType,
-        skipReason: "unsupported_type"
-      });
-      continue;
-    }
-
-    console.log("[DGL] Catch-up dispatching", {
-      reason,
-      id: row.id,
-      activity_type: rawType
-    });
+    if (!isSupportedActivityType(rawType)) continue;
 
     const result = await dispatchActivity(discordClient, row, `catchup:${reason}`);
-    console.log("[DGL] Catch-up result", {
-      reason,
-      id: row.id,
-      activity_type: rawType,
-      status: result.status
-    });
     if (result.status === "posted") {
       posted += 1;
     }
