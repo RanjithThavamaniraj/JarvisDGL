@@ -7,7 +7,8 @@
 const ACTIVITY_TYPES = {
   TOURNAMENT_PUBLISHED: "tournament_published",
   GIVEAWAY_CREATED: "giveaway_created",
-  GIVEAWAY_COMPLETED: "giveaway_completed"
+  GIVEAWAY_COMPLETED: "giveaway_completed",
+  GIVEAWAY_REMINDER: "giveaway_reminder"
   // Future (do not register until implemented):
   // REGISTRATION_OPENED: "registration_opened",
   // REGISTRATION_CLOSED: "registration_closed",

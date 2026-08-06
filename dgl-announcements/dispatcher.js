@@ -3,6 +3,7 @@ const { isProcessed, claimActivity, markPosted, markFailed } = require("./store"
 const { handleTournamentPublished } = require("./handlers/tournament-published");
 const { handleGiveawayCreated } = require("./handlers/giveaway-created");
 const { handleGiveawayCompleted } = require("./handlers/giveaway-completed");
+const { handleGiveawayReminder } = require("./handlers/giveaway-reminder");
 
 /**
  * Permanent extension point for DGL announcements.
@@ -17,7 +18,8 @@ const { handleGiveawayCompleted } = require("./handlers/giveaway-completed");
 const HANDLERS = {
   [ACTIVITY_TYPES.TOURNAMENT_PUBLISHED]: handleTournamentPublished,
   [ACTIVITY_TYPES.GIVEAWAY_CREATED]: handleGiveawayCreated,
-  [ACTIVITY_TYPES.GIVEAWAY_COMPLETED]: handleGiveawayCompleted
+  [ACTIVITY_TYPES.GIVEAWAY_COMPLETED]: handleGiveawayCompleted,
+  [ACTIVITY_TYPES.GIVEAWAY_REMINDER]: handleGiveawayReminder
 };
 
 function getActivityType(row) {

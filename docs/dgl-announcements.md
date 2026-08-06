@@ -25,6 +25,7 @@ Jarvis is **read-only** against Supabase (anon key). Idempotency is stored local
 | `tournament_published` | `handlers/tournament-published.js` |
 | `giveaway_created` | `handlers/giveaway-created.js` |
 | `giveaway_completed` | `handlers/giveaway-completed.js` |
+| `giveaway_reminder` | `handlers/giveaway-reminder.js` |
 
 ## Adding a future handler
 
