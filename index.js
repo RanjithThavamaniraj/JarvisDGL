@@ -39,6 +39,12 @@ client.once("clientReady", async () => {
   logDglStartupStatus();
   require("./dgl-announcements").setup(client);
 
+  try {
+    await require("./xp-leveling").setup(client);
+  } catch (err) {
+    console.error("[XP] Setup failed (Jarvis continuing):", err.message || err);
+  }
+
   require("./api/server").start();
 
   let aiChannel;
@@ -273,6 +279,13 @@ Grab your snacks and enjoy the action! 🔥${supportFooter}`
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
+
+  // Optional XP leveling — never await; must not block existing Jarvis handlers.
+  try {
+    require("./xp-leveling").handleMessage(client, message);
+  } catch (err) {
+    console.error("[XP] Unhandled error (Jarvis continuing):", err.message || err);
+  }
 
   console.log("COMMAND:", message.content);
   console.log("AUTHOR:", message.author.id);

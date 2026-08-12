@@ -1,5 +1,8 @@
 -- Pit Wall Architecture: Phase 1 Schema Migration
 -- Run this in your Supabase SQL Editor
+--
+-- Optional XP/Leveling (separate from prediction points):
+--   also run schema-xp-leveling.sql before enabling ENABLE_XP_LEVELING
 
 -- 1. Create Core Tables
 
