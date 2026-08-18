@@ -5,6 +5,18 @@ const { loadXpConfig } = require("./config");
 let supabase = null;
 let clientInitialized = false;
 
+/**
+ * Prefer native WebSocket (Node 22+ / browsers). Fall back to `ws` on Node 20.
+ * Same pattern as dgl-announcements/client.js — required because createClient()
+ * constructs a RealtimeClient even though XP only uses HTTP RPC.
+ */
+function resolveWebSocketTransport() {
+  if (typeof globalThis.WebSocket === "function") {
+    return globalThis.WebSocket;
+  }
+  return require("ws");
+}
+
 function getSupabase() {
   if (clientInitialized) {
     return supabase;
@@ -22,8 +34,12 @@ function getSupabase() {
   }
 
   try {
+    const transport = resolveWebSocketTransport();
     supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false }
+      auth: { persistSession: false, autoRefreshToken: false },
+      realtime: {
+        transport
+      }
     });
   } catch (err) {
     console.error("[XP] Failed to initialize Supabase client:", err.message || err);
