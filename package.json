@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node xp-leveling/test.js",
-    "test:xp": "node xp-leveling/test.js"
+    "test": "node xp-leveling/test.js && node community-predictions/race-weekend.test.js",
+    "test:xp": "node xp-leveling/test.js",
+    "test:race-weekend": "node community-predictions/race-weekend.test.js"
   },
   "keywords": [],
   "author": "",

@@ -120,12 +120,17 @@ function subtractMinutes(canonicalStart, minutes) {
   return toMotoGpDayjs(canonicalStart).subtract(minutes, "minute").toISOString();
 }
 
+function isRaceWeekendActiveAt(raceStart, now, timezone = DISPLAY_TIMEZONE) {
+  const race = toMotoGpDayjs(raceStart).tz(timezone);
+  const current = dayjs(now).tz(timezone);
+  const daysSinceFriday = (race.day() + 2) % 7;
+  const fridayStart = race.subtract(daysSinceFriday, "day").startOf("day");
+  const mondayEnd = fridayStart.add(4, "day");
+  return !current.isBefore(fridayStart) && current.isBefore(mondayEnd);
+}
+
 function isMotoGpRaceThisWeekend(canonicalStart) {
-  const race = toMotoGpDayjs(canonicalStart).tz(DISPLAY_TIMEZONE);
-  const now = dayjs().tz(DISPLAY_TIMEZONE);
-  const fridayStart = now.day(5).startOf("day");
-  const mondayEnd = fridayStart.add(3, "day");
-  return !race.isBefore(fridayStart) && race.isBefore(mondayEnd);
+  return isRaceWeekendActiveAt(canonicalStart, dayjs(), DISPLAY_TIMEZONE);
 }
 
 /** Calendar date (YYYY-MM-DD) in the display timezone — used for event window lookups. */
@@ -194,6 +199,7 @@ module.exports = {
   isMotoGpSameCalendarDay,
   getMotoGpYear,
   subtractMinutes,
+  isRaceWeekendActiveAt,
   isMotoGpRaceThisWeekend,
   getMotoGpTodayDateString,
   getMotoGpInstantValue,

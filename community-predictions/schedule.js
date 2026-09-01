@@ -8,6 +8,7 @@ const {
   getMotoGpYear,
   subtractMinutes,
   isMotoGpRaceThisWeekend,
+  isRaceWeekendActiveAt,
   normalizeStoredStart
 } = require("../utils/motogp-time");
 const { getMotoGpCache } = require("../motogp-provider");
@@ -102,11 +103,7 @@ function isRaceThisWeekend(raceStart, sport) {
   if (sport === "motogp") {
     return isMotoGpRaceThisWeekend(raceStart);
   }
-  const race = dayjs(raceStart).tz(IST);
-  const now = dayjs().tz(IST);
-  const fridayStart = now.day(5).startOf("day");
-  const mondayEnd = fridayStart.add(3, "day");
-  return !race.isBefore(fridayStart) && race.isBefore(mondayEnd);
+  return isRaceWeekendActiveAt(raceStart, dayjs(), IST);
 }
 
 async function isMotoGpRaceResultsPosted() {
